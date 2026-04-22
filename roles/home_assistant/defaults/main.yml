@@ -1,0 +1,3 @@
+home_assistant_root: /data/homeassistant
+home_assistant_zigbee_dongle_device: /dev/serial/by-id/usb-ITead_Sonoff_Zigbee_3.0_USB_Dongle_Plus_5e5dd3aec419ec119a9b7fe5f01c6278-if00-port0
+home_assistant_domain: haus.strieter.eu

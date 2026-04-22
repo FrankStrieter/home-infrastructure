@@ -1,0 +1,49 @@
+- name: Copy systemd unit
+  ansible.builtin.template:
+    src: systemd/home_assistant.service.j2
+    dest: /etc/systemd/system/home_assistant.service
+    owner: root
+    group: root
+    mode: "644"
+  notify: Restart home assistant service
+
+- name: Create /data/home_assistant dir
+  ansible.builtin.file:
+    path: "{{ homeassistant_root }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "644"
+
+- name: Copy docker compose template
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: '{{ root }}/docker-compose.yml'
+    owner: root
+    group: root
+    mode: "644"
+  notify: Restart home assistant service
+
+- name: Copy homeassistant configuration
+  ansible.builtin.copy:
+    src: templates/config/
+    dest: '{{ homeassistant_root }}/config/'
+    owner: root
+    group: root
+    mode: "644"
+    directory_mode: true
+  notify: Restart home assistant service
+
+- name: Start systemd units
+  ansible.builtin.systemd:
+    name: "home-assistant.service"
+    state: started
+    enabled: true
+    daemon_reload: true
+
+- name: Ensure service domain is registered on router
+  ansible.builtin.import_tasks:
+    file: router-update-dns.yml
+  vars:
+    machine_ip: "{{ ansible_facts.default_ipv4.address }}"
+    service_url: "{{ homeassistant_domain }}"

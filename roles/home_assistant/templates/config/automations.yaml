@@ -1,0 +1,152 @@
+- id: '1664120187374'
+  alias: Durchlaufkühler 15min
+  description: ''
+  trigger:
+  - platform: state
+    entity_id:
+    - sensor.buero_shrtct_btn_1_action
+    to: 'on'
+  condition: []
+  action:
+  - choose:
+    - conditions:
+      - condition: or
+        conditions:
+        - condition: state
+          entity_id: switch.sonoff_4
+          state: unknown
+        - condition: state
+          entity_id: switch.sonoff_4
+          state: 'off'
+      sequence:
+      - service: switch.turn_on
+        data: {}
+        target:
+          entity_id: switch.sonoff_4
+      - delay:
+          hours: 0
+          minutes: 15
+          seconds: 0
+          milliseconds: 0
+      - service: switch.turn_off
+        data: {}
+        target:
+          entity_id: switch.sonoff_4
+    default:
+    - delay:
+        hours: 0
+        minutes: 15
+        seconds: 0
+        milliseconds: 0
+    - service: switch.turn_off
+      data: {}
+      target:
+        entity_id: switch.sonoff_4
+  mode: restart
+- id: '1664122434639'
+  alias: Durchlaufkühler Zeitschaltuhr 2h
+  description: ''
+  trigger:
+  - platform: state
+    entity_id:
+    - sensor.buero_shrtct_btn_1_action
+    to: brightness_move_up
+  condition: []
+  action:
+  - choose:
+    - conditions: []
+      sequence:
+      - service: switch.turn_on
+        data: {}
+        target:
+          entity_id: switch.sonoff_4
+      - delay:
+          hours: 2
+          minutes: 0
+          seconds: 0
+          milliseconds: 0
+      - service: switch.turn_off
+        data: {}
+        target:
+          entity_id: switch.sonoff_4
+    default:
+    - delay:
+        hours: 2
+        minutes: 0
+        seconds: 0
+        milliseconds: 0
+    - service: switch.turn_off
+      data: {}
+      target:
+        entity_id: switch.sonoff_4
+  mode: restart
+- id: '1664124187256'
+  alias: Durchlaufkühler aus
+  description: ''
+  trigger:
+  - platform: state
+    entity_id:
+    - sensor.buero_shrtct_btn_1_action
+    to: brightness_move_up
+  condition:
+  - condition: state
+    entity_id: switch.sonoff_4
+    state: 'on'
+  action:
+  - service: switch.turn_off
+    data: {}
+    target:
+      entity_id: switch.sonoff_4
+  mode: single
+- id: '1664183736522'
+  alias: Schreibtisch werktags aus
+  description: ''
+  trigger:
+  - platform: time
+    at: '18:00:00'
+  condition:
+  - condition: state
+    entity_id: binary_sensor.workday_sensor
+    state: 'true'
+  action:
+  - service: switch.turn_off
+    data: {}
+    target:
+      entity_id: switch.sonoff_2
+  mode: single
+- id: '1664609062042'
+  alias: DLK aus
+  description: ''
+  trigger:
+  - platform: state
+    entity_id:
+    - sensor.buero_shrtct_btn_1_action
+    to: 'on'
+  condition: []
+  action:
+  - delay:
+      hours: 0
+      minutes: 0
+      seconds: 0
+      milliseconds: 100
+  - wait_for_trigger:
+    - platform: state
+      entity_id: sensor.buero_shrtct_btn_1_action
+      to: 'on'
+    timeout: '0.8'
+    continue_on_timeout: false
+  - service: switch.turn_off
+    data: {}
+    target:
+      entity_id: switch.sonoff_4
+  mode: single
+- id: '1682781329929'
+  alias: Büro Hallway Light
+  description: ''
+  use_blueprint:
+    path: homeassistant/motion_light.yaml
+    input:
+      motion_entity: binary_sensor.0x84ba20fffe7040d5_occupancy
+      light_target:
+        entity_id: light.shelly1_f42d92
+      no_motion_wait: 60

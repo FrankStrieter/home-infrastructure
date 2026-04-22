@@ -1,0 +1,5 @@
+- name: Restart home assistant service
+  when: home_assistant_started is not changed
+  ansible.builtin.systemd:
+    name: home_assistant.service
+    state: restarted

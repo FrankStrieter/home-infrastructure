@@ -1,0 +1,62 @@
+- name: Determine backup archive to restore unless it was specified
+  when: >-
+    restore_archive[restore_target_dir] |
+    default('', true) |
+    trim |
+    length == 0
+  block:
+    # borgmatic extract --archive=latest would pick the latest archive across
+    # all archives and not just the one to be restored, i.e. as per the
+    # match_archives setting of backup.yaml. borgmatic info considers
+    # match_archives correctly as per backup.yaml.
+    - name: Get information about latest backup archive
+      ansible.builtin.command:
+        argv:
+          - borgmatic
+          - info
+          - "--config={{ restore_target_dir }}/backup.yaml"
+          - --last=1
+          - --json
+      register: borgmatic_latest_backup_json
+      changed_when: false
+
+    - name: Determine backup archive to restore
+      ansible.builtin.set_fact:
+        restore_archive: >-
+          {{
+            restore_archive |
+            default({}) |
+            ansible.builtin.combine(
+              {
+                restore_target_dir: (
+                  borgmatic_latest_backup_json.stdout |
+                  ansible.builtin.from_json
+                )[0].archives[0].name
+              }
+            )
+          }}
+
+- name: Show backup archive to restore
+  ansible.builtin.debug:
+    msg: >-
+      The backup archive to restore is
+      {{ restore_archive[restore_target_dir] }}
+
+- name: Restore data
+  ansible.builtin.command:
+    argv:
+      - borgmatic
+      - extract
+      - "--archive={{ restore_archive[restore_target_dir] }}"
+      - "--config={{ restore_target_dir }}/backup.yaml"
+      - "--path={{ restore_target_dir }}"
+      - --strip-components=all
+      # Trailing /.. is required, otherwise files would be placed in a directory
+      # below root.
+      - "--destination={{ restore_target_dir }}/.."
+  register: borgmatic_extract_output
+  changed_when: true
+
+- name: Show restore output
+  ansible.builtin.debug:
+    var: borgmatic_extract_output

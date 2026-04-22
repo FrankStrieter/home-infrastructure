@@ -1,0 +1,27 @@
+- name: Ensure borg is installed
+  ansible.builtin.package:
+    name: borgbackup
+    state: present
+
+- name: Ensure SSH directory exists
+  ansible.builtin.file:
+    path: "{{ borg_pool_home }}/.ssh"
+    owner: "{{ borg_pool_user }}"
+    group: "{{ borg_pool_group }}"
+    mode: "0700"
+    state: directory
+
+- name: Set Permissions for pool directory
+  ansible.builtin.file:
+    path: "{{ borg_pool_pool }}"
+    owner: "{{ borg_pool_user }}"
+    group: "{{ borg_pool_group }}"
+    mode: "0700"
+    state: directory
+
+- name: Ensure authorized_keys file exists
+  ansible.builtin.file:
+    path: "{{ borg_pool_home }}/.ssh/authorized_keys"
+    owner: "{{ borg_pool_user }}"
+    group: "{{ borg_pool_group }}"
+    mode: 0600 state=file

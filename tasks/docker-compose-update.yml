@@ -1,0 +1,41 @@
+- name: Prune unused docker images
+  ansible.builtin.command:
+    argv:
+      - docker
+      - image
+      - prune
+      - --all
+      - --force
+      - --filter
+      - "until={{ 30 * 24 }}h"
+  register: docker_image_prune
+  changed_when: "'Deleted Images:' in docker_image_prune.stdout"
+
+- name: Pull docker images
+  when: pull is defined and pull | bool
+  ansible.builtin.command:
+    chdir: "{{ directory }}"
+    argv:
+      - docker
+      - compose
+      - pull
+  register: docker_compose_pull
+  changed_when: "'Pull complete' in docker_compose_pull.stderr"
+  notify: "{{ should_notify | default(omit) }}"
+
+- name: Build docker images
+  when: build is defined and build | bool
+  ansible.builtin.command:
+    chdir: "{{ directory }}"
+    argv:
+      - docker
+      - compose
+      - build
+      - --pull
+  register: docker_compose_build
+  # Cached build: exporting layers done
+  # Uncached build: exporting layers 1.2s done
+  changed_when: >-
+    docker_compose_build.stdout_lines | length > 0 and
+    not 'exporting layers done' in docker_compose_build.stdout
+  notify: "{{ should_notify | default(omit) }}"

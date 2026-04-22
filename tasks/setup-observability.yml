@@ -1,0 +1,16 @@
+- name: Ensure configuration directories exists
+  ansible.builtin.file:
+    path: "{{ gatus_config_directory }}"
+    state: directory
+    owner: 0
+    group: 0
+    mode: "755"
+
+- name: Copy status page configuration
+  ansible.builtin.copy:
+    src: "{{ directory }}/gatus/conf.yaml"
+    remote_src: true
+    dest: "{{ gatus_config_directory }}/{{ ansible_role_name }}.yaml"
+    owner: 0
+    group: 0
+    mode: '644'

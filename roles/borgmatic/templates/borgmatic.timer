@@ -1,0 +1,14 @@
+[Unit]
+Description=borgmatic Backup Timer
+
+[Timer]
+# Reset the default calendar option set by the package.
+OnCalendar=
+OnCalendar=19:00 Europe/Berlin
+RandomizedDelaySec=10m
+
+# Catch up when an invocation was missed.
+Persistent=true
+
+[Install]
+WantedBy=timers.target

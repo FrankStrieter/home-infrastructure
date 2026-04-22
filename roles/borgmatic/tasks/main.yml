@@ -1,0 +1,74 @@
+- name: Prepare installation
+  ansible.builtin.include_tasks:
+    file: "install-Debian.yml"
+
+- name: Install borgmatic
+  ansible.builtin.include_role:
+    name: borgbase.ansible_role_borgbackup
+  vars:
+    borg_encryption_passphrase: >-
+      {{ borgmatic_encryption_passphrase | ansible.builtin.mandatory }}
+
+    borg_repository: >-
+      ssh://{{ borgmatic_ssh_host | ansible.builtin.mandatory }}/./{{ borgmatic_server_name | default(ansible_hostname) }}
+
+    borgmatic_relocated_repo_access_is_ok: true
+
+    borg_ssh_key_name: borg-backup
+    borg_ssh_command: >-
+      ssh -i "{{ borg_ssh_key_file_path }}" -o StrictHostKeyChecking=accept-new
+
+    # Timer is installed by the package. Or run timers ourselves as the
+    # pip-installed only runs the default borgmatic config.
+    borgmatic_timer: ""
+
+    borg_source_directories:
+      - /etc
+
+#    borgmatic_hooks:
+#      healthchecks:
+#        ping_url: "{{ borgmatic_system_backup_healthcheck }}"
+
+    borgmatic_store_atime: false
+
+- name: Patch config file to include constant name
+  ansible.builtin.lineinfile:
+    path: /etc/borgmatic/config.yaml
+    insertbefore: "location:"
+    firstmatch: true
+    line: |
+      constants:
+        name: system
+
+- name: Patch config file changing archive_name_format
+  ansible.builtin.lineinfile:
+    path: /etc/borgmatic/config.yaml
+    search_string: "archive_name_format:"
+    line: "    archive_name_format: '{hostname}-{name}-{now}'"
+
+- name: Patch config file to include match_archives
+  ansible.builtin.lineinfile:
+    path: /etc/borgmatic/config.yaml
+    insertafter: "archive_name_format:"
+    firstmatch: true
+    line: "    match_archives: 'sh:{{ borgmatic_server_name | default('{hostname}') }}-{name}-*'"
+
+- name: Ensure /etc/borgmatic.d exists
+  ansible.builtin.file:
+    path: /etc/borgmatic.d
+    state: directory
+    owner: 0
+    group: 0
+    mode: "700"
+
+- name: Install service and timer
+  ansible.builtin.include_tasks:
+    file: "postinstall-Debian.yml"
+
+- name: Start borgmatic timer
+  ansible.builtin.systemd:
+    state: started
+    enabled: true
+    name: borgmatic.timer
+    daemon_reload: true
+  register: borgmatic_timer_started

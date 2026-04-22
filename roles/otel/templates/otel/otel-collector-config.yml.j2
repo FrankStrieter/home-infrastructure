@@ -1,0 +1,62 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+      # Disable HTTP transport.
+      # http:
+
+exporters:
+  logging:
+    loglevel: debug
+
+  otlp:
+    endpoint: jaeger:4317
+    tls:
+      insecure: true
+
+  prometheus:
+    # Allow Prometheus to scrape us, used by spanmetrics CONNECTOR + PROCESSOR.
+    endpoint: 0.0.0.0:8889
+    # These configs apply to the spanmetrics CONNECTOR.
+    resource_to_telemetry_conversion:
+      enabled: true
+    enable_open_metrics: true
+
+connectors:
+  # New spanmetrics CONNECTOR.
+  spanmetrics:
+
+processors:
+  filter/health:
+    traces:
+      span:
+        # This tail filter will exclude the root spans of /health requests.
+        # Further spans created during the health check (e.g. SQL Server
+        # connections) will still be included.
+        # https://opentelemetry.io/docs/concepts/sampling/
+        - 'attributes["http.route"] == "/health"'
+
+  batch:
+
+service:
+  pipelines:
+    traces:
+      receivers:
+        - otlp
+      processors:
+        # - filter/seq
+        # - filter/health
+        - batch
+      exporters:
+        # - logging
+        - otlp
+        - spanmetrics # CONNECTOR
+    metrics:
+      receivers:
+        - otlp
+        - spanmetrics # CONNECTOR
+      processors:
+        - batch
+      exporters:
+        # - logging
+        - prometheus

@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+# vim: set ft=jinja-shell ts=2 sw=2 et:
+
+set -euo pipefail
+
+role={{ ansible_role_name | ansible.builtin.quote }}
+compose=(docker compose --project-name "$role")
+
+cleanup() {
+  printf 'Cleaning up backup directory.\n'
+  rm -rf -- {{ otel_root | ansible.builtin.quote }}/backups
+  mkdir --parents -- {{ otel_root | ansible.builtin.quote }}/backups
+}
+
+grafana() {
+  local target={{ otel_root | ansible.builtin.quote }}/backups/grafana
+
+  mkdir --parents -- "$target"
+
+  docker run \
+         --rm \
+         --volumes-from {{ ansible_role_name | ansible.builtin.quote }}-grafana-1 \
+         alpine/sqlite:3.49.2 \
+         /var/lib/grafana/grafana.db \
+         .dump \
+    > "$target/db.sql"
+
+}
+
+prometheus() {
+  local target={{ otel_root | ansible.builtin.quote }}/backups/prometheus
+  local snapshot
+
+  mkdir --parents -- "$target"
+
+  snapshot="$( \
+    "${compose[@]}" exec \
+                    prometheus \
+                    wget \
+                    --post-data '' \
+                    -O - \
+                    http://localhost:9090/api/v1/admin/tsdb/snapshot \
+      | jq --exit-status --raw-output .data.name \
+  )"
+
+  "${compose[@]}" cp \
+                  "prometheus:/prometheus/snapshots/$snapshot" \
+                  "$target"
+
+  "${compose[@]}" exec \
+                  prometheus \
+                  rm -r /prometheus/snapshots
+}
+
+trap cleanup ERR SIGINT SIGTERM
+
+cleanup
+grafana
+prometheus

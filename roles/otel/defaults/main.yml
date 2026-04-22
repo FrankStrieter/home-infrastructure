@@ -1,0 +1,4 @@
+otel_root: "/data/{{ ansible_role_name }}"
+
+# Scrape metrics every minute.
+otel_prometheus_scrape_interval: 3m

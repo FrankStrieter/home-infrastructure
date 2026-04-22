@@ -1,0 +1,12 @@
+otel_collector_domain: "otel-collector.{{ domain }}"
+otel_collector_url: "https://{{ otel_collector_domain }}"
+
+prometheus_domain: "prometheus.{{ domain }}"
+prometheus_url: "https://{{ prometheus_domain }}"
+
+prometheus_config_directory: /data/otel/prometheus/conf.d
+prometheus_scrapes_config_directory: "{{ prometheus_config_directory }}/scrapes"
+
+grafana_domain: "grafana.{{ domain }}"
+grafana_url: "https://{{ grafana_domain }}"
+grafana_admin_password: "{{ vault_grafana_admin_password }}"

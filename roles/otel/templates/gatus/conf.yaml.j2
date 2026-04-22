@@ -1,0 +1,28 @@
+endpoints:
+  - name: Open Telemetry Collector
+    group: Infrastructure
+    url: {{ otel_collector_url }}
+    interval: 5m
+    conditions:
+      - "[STATUS] == 415"
+    alerts:
+      - type: telegram
+
+  - name: Prometheus
+    group: Infrastructure
+    url: {{ prometheus_url }}/-/healthy
+    interval: 5m
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY] == Prometheus Server is Healthy."
+    alerts:
+      - type: telegram
+
+  - name: Grafana
+    group: Infrastructure
+    url: {{ grafana_url }}
+    interval: 5m
+    conditions:
+      - "[STATUS] == 200"
+    alerts:
+      - type: telegram

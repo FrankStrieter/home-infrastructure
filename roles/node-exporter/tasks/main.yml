@@ -1,0 +1,36 @@
+- name: Copy templates
+  ansible.builtin.import_tasks: copy-templates.yml
+  vars:
+    directory: ../templates
+    target: "{{ node_exporter_root }}"
+    should_notify: Restart Node Exporter # noqa: var-naming[no-reserved]
+    files:
+      docker-compose.yaml.j2:
+        owner: 0
+        group: 0
+        mode: "640"
+
+- name: Update docker-compose images
+  ansible.builtin.import_tasks:
+    file: docker-compose-update.yml
+  vars:
+    directory: "{{ node_exporter_root }}"
+    pull: "{{ docker_update is defined }}"
+    build: "{{ docker_update is defined }}"
+    should_notify: Restart Node Exporter # noqa: var-naming[no-reserved]
+
+- name: Symlink systemd unit
+  ansible.builtin.file:
+    state: link
+    src: "{{ node_exporter_root }}/{{ ansible_role_name }}.service"
+    path: "/etc/systemd/system/{{ ansible_role_name }}.service"
+    force: true
+  notify: Restart Node Exporter
+
+- name: Start systemd unit
+  ansible.builtin.systemd:
+    state: started
+    enabled: true
+    name: "{{ ansible_role_name }}.service"
+    daemon_reload: true
+  register: node_exporter_started

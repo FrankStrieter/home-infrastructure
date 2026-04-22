@@ -1,0 +1,12 @@
+- name: "Ensure domain is registered: {{ service_url }}"
+  delegate_to: router
+  community.openwrt.uci:
+    command: section
+    config: dhcp
+    type: domain
+    set_find: true
+    autocommit: true
+    find:
+      name: "{{ service_url }}"
+      ip: "{{ machine_ip }}"
+  register: domain_exists

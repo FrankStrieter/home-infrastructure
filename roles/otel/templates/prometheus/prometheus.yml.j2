@@ -1,0 +1,9 @@
+global:
+  # The default is every 1 minute.
+  scrape_interval: {{ otel_prometheus_scrape_interval | mandatory }}
+  # The default is every 1 minute.
+  evaluation_interval: 1m
+  # scrape_timeout is set to the global default (10s).
+
+scrape_config_files:
+  - /etc/prometheus.d/scrapes/*.yml

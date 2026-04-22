@@ -1,0 +1,5 @@
+- name: Restart Node Exporter
+  when: node_exporter_started is not changed
+  ansible.builtin.systemd:
+    name: "{{ ansible_role_name }}.service"
+    state: restarted

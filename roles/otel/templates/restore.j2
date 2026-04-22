@@ -1,0 +1,87 @@
+#!/usr/bin/env bash
+# vim: set ft=jinja-shell ts=2 sw=2 et:
+
+set -euo pipefail
+
+# cd into script directory.
+cd -- "$(cd "$(dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd)"
+
+role={{ ansible_role_name | ansible.builtin.quote }}
+compose=(docker compose --project-name "$role")
+
+prometheus() {
+  "${compose[@]}" down \
+                  --volumes \
+                  prometheus
+
+  "${compose[@]}" create \
+                  prometheus
+
+  "${compose[@]}" cp \
+                  {{ otel_root | ansible.builtin.quote }}/backups/prometheus/*/. \
+                  prometheus:/prometheus
+
+  "${compose[@]}" start \
+                  prometheus
+
+  # Files must have the right permissions, otherwise creating snapshots
+  # (i.e. for the next backup) will fail. Docker copies files with root:root
+  # ownership by default.
+  "${compose[@]}" exec \
+                  --user root \
+                  prometheus \
+                  chown \
+                  -R nobody:nobody \
+                  /prometheus
+}
+
+grafana() {
+  "${compose[@]}" run \
+                  --no-TTY \
+                  --rm \
+                  --entrypoint rm \
+                  grafana \
+                  -f /var/lib/grafana/grafana.db
+
+  "${compose[@]}" create
+
+  docker container \
+         run \
+         --interactive \
+         --rm \
+         --volumes-from "$role-grafana-1" \
+         alpine/sqlite:3.49.2 \
+         /var/lib/grafana/grafana.db \
+    < {{ otel_root | ansible.builtin.quote }}/backups/grafana/db.sql
+
+  "${compose[@]}" run \
+                  --no-TTY \
+                  --rm \
+                  --user root \
+                  --entrypoint chown \
+                  grafana \
+                  grafana /var/lib/grafana/grafana.db
+
+  "${compose[@]}" run \
+                  --no-TTY \
+                  --rm \
+                  --user root \
+                  --entrypoint chmod \
+                  grafana \
+                  600 /var/lib/grafana/grafana.db
+}
+
+if systemctl is-active "$role" > /dev/null; then
+  start_stop=
+fi
+
+if [[ -v start_stop ]]; then
+  systemctl stop "$role"
+fi
+
+prometheus
+grafana
+
+if [[ -v start_stop ]]; then
+  systemctl start "$role"
+fi

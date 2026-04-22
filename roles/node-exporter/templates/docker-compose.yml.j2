@@ -1,0 +1,22 @@
+services:
+  app:
+    image: prom/node-exporter:v1.8.2
+    {% if node_exporter_user is defined %}
+    user: {{ node_exporter_user }}
+    {% endif %}
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+      - '--collector.systemd'
+      - '--collector.processes'
+    security_opt:
+      # needed for systemd-collector to connect to the socket
+      - apparmor:unconfined
+    network_mode: host

@@ -1,0 +1,18 @@
+- name: Restart Open Telemetry
+  when: otel_started is not changed
+  ansible.builtin.systemd:
+    name: "{{ ansible_role_name }}.service"
+    state: restarted
+
+- name: Reload Prometheus configuration
+  ansible.builtin.command:
+    argv:
+      - docker
+      - compose
+      - --project-name
+      - otel
+      - kill
+      - --signal
+      - SIGHUP
+      - prometheus
+  changed_when: true

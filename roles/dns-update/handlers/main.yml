@@ -1,0 +1,5 @@
+- name: Restart dns-update service
+  when: dns_update_started is not changed
+  ansible.builtin.systemd:
+    name: dns-update.service
+    state: restarted

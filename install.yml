@@ -1,0 +1,97 @@
+- name: Deploy services on home_server
+  hosts: home
+  become: true
+  roles:
+    - role: hifis.toolkit.unattended_upgrades
+      when: ansible_os_family == 'Debian'
+      vars:
+        # Install security updates at 3:00 + up to 30min, reboot immeditately if
+        # required.
+        unattended_systemd_timer_override: true
+        unattended_apt_daily_upgrade_oncalendar: '*-*-* 3:00'
+        unattended_apt_daily_upgrade_randomizeddelaysec: 30m
+        unattended_automatic_reboot: true
+      tags:
+        - updates
+        - unattended_upgrades
+        - apt
+    - role: system-users
+      tags:
+        - users
+        - system-users
+    - role: borgmatic
+      tags:
+        - borgmatic
+        - backup
+    - role: docker
+      tags:
+        - docker
+        - common
+    - role: dns-update
+      tags:
+        - dns
+        - dns-update
+    - role: gatus
+      tags:
+        - gatus
+    - role: vaultwarden
+      tags:
+        - vaultwarden
+        - passwords
+    - role: traefik
+      tags: traefik
+    - role: home_assistant
+      tags: home_assistant
+    - role: node-exporter
+      tags:
+        - otel
+        - observability
+        - node-exporter
+    - role: otel
+      tags:
+        - otel
+        - observability
+
+- name: Deploy services for backup
+  hosts: backup
+  become: true
+  roles:
+    - role: hifis.toolkit.unattended_upgrades
+      when: ansible_os_family == 'Debian'
+      vars:
+        # Install security updates at 3:00 + up to 30min, reboot immeditately if
+        # required.
+        unattended_systemd_timer_override: true
+        unattended_apt_daily_upgrade_oncalendar: '*-*-* 3:00'
+        unattended_apt_daily_upgrade_randomizeddelaysec: 30m
+        unattended_automatic_reboot: true
+      tags:
+        - updates
+        - unattended_upgrades
+        - apt
+    - role: system-users
+      tags:
+        - users
+        - system-users
+    - role: docker
+      tags:
+        - docker
+    - role: node-exporter
+      tags:
+        - otel
+        - observability
+        - node-exporter
+    - role: otel
+      tags:
+        - otel
+        - observability
+
+- name: Routers
+  hosts: router
+  gather_facts: false
+  roles:
+    - role: community.openwrt.init
+      vars:
+        openwrt_install_recommended_packages: false
+      tags:
+        - init

@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+# vim: set ft=jinja-shell ts=2 sw=2 et:
+
+set -euo pipefail
+
+role={{ ansible_role_name | ansible.builtin.quote }}
+
+db() {
+  # Remove existing database that prevents the dump from being restored.
+  rm --force \
+     -- \
+     {{ vaultwarden_root | ansible.builtin.quote }}/app/db.sqlite3 \
+     {{ vaultwarden_root | ansible.builtin.quote }}/app/db.sqlite3-shm \
+     {{ vaultwarden_root | ansible.builtin.quote }}/app/db.sqlite3-wal
+
+  # renovate: docker=alpine/sqlite
+  local sqlite_version=3.51.2
+
+  docker container \
+         run \
+         --interactive \
+         --rm \
+         --volume {{ vaultwarden_root | ansible.builtin.quote }}/app:/data \
+         "alpine/sqlite:$sqlite_version" \
+         /data/db.sqlite3 \
+    < {{ vaultwarden_root | ansible.builtin.quote }}/backups/db.sql
+}
+
+if systemctl is-active "$role" > /dev/null; then
+  start_stop=
+fi
+
+if [[ -v start_stop ]]; then
+  systemctl stop "$role"
+fi
+
+db
+
+if [[ -v start_stop ]]; then
+  systemctl start "$role"
+fi

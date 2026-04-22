@@ -1,0 +1,4 @@
+cloudflare_email: "{{ vault_cloudflare_email}}"
+cloudflare_account_id: "{{ vault_cloudflare_account_id }}"
+cloudflare_token: "{{ vault_cloudflare_token }}"
+cloudflare_zone_id: "{{ vault_cloudflare_zone_id }}"

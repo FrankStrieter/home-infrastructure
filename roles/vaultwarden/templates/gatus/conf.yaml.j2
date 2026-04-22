@@ -1,0 +1,9 @@
+endpoints:
+  - name: Vaultwarden
+    group: Infrastructure
+    url: https://{{ vaultwarden_domain }}
+    interval: 1m
+    conditions:
+      - "[STATUS] == 200"
+    alerts:
+      - type: telegram

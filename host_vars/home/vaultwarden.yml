@@ -1,0 +1,10 @@
+vaultwarden_domain: passwords.{{ domain }}
+vaultwarden_admin_token: "{{ vault_vaultwarden_admin_token }}"
+
+vaultwarden_smtp_user: "{{ vault_vaultwarden_smtp_user }}"
+vaultwarden_smtp_password: "{{ vault_vaultwarden_smtp_password }}"
+
+vaultwarden_push_installation_id: "{{ vault_vaultwarden_push_installation_id }}"
+vaultwarden_push_installation_key: "{{ vault_vaultwarden_push_installation_key }}"
+
+#vaultwarden_backup_healthcheck: "{{ vault_vaultwarden_backup_healthcheck }}"

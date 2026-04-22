@@ -1,0 +1,27 @@
+networks:
+  web:
+    external: true
+
+services:
+  app:
+    image: vaultwarden/server:1.35.4-alpine
+    restart: unless-stopped
+    user: "{{ vaultwarden_uid_gid | ansible.builtin.mandatory }}:{{ vaultwarden_uid_gid }}"
+    networks:
+      - web
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./app:/data/
+    env_file:
+      - ./.env.vaultwarden
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}-app.rule=Host(`{{ vaultwarden_domain | mandatory }}`)
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}-app.entrypoints=https
+
+  tunnel:
+    image: cloudflare/cloudflared:2026.3.0 
+    command: tunnel run
+    environment:
+      - TUNNEL_TOKEN={{ terraform.outputs.tunnel_token.value.token }} 
+ 

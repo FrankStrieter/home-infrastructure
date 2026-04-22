@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# vim: set ft=jinja-shell ts=2 sw=2 et:
+
+set -euo pipefail
+
+cleanup() {
+  printf 'Cleaning up backup directory.\n'
+  rm -rf -- {{ vaultwarden_root | ansible.builtin.quote }}/backups
+  mkdir --parents -- {{ vaultwarden_root | ansible.builtin.quote }}/backups
+}
+
+db() {
+  # renovate: docker=alpine/sqlite
+  local sqlite_version=3.51.2
+
+  docker run \
+         --rm \
+         --volumes-from $(docker compose --project-name {{ ansible_role_name | ansible.builtin.quote }} ps --format {% raw %}'{{.ID}}'{% endraw %}) \
+         "alpine/sqlite:$sqlite_version" \
+         /data/db.sqlite3 \
+         .dump \
+    > {{ vaultwarden_root | ansible.builtin.quote }}/backups/db.sql
+}
+
+trap cleanup ERR SIGINT SIGTERM
+
+cleanup
+db

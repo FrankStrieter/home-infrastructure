@@ -1,0 +1,94 @@
+- name: Setup Cloudflare tunnel
+  delegate_to: localhost
+  become: false
+  community.general.terraform:
+    project_path: 'roles/vaultwarden/cloudflare-tunnel'
+    state: present
+    variables:
+      cloudflare_email: "{{ cloudflare_email }}"
+      cloudflare_account_id: "{{ cloudflare_account_id  }}"
+      cloudflare_token: "{{ cloudflare_token }}"
+      cloudflare_zone_id: "{{ cloudflare_zone_id }}"
+      domain: "{{ vaultwarden_domain }}"
+  register: terraform
+
+- name: Copy templates
+  ansible.builtin.import_tasks: copy-templates.yml
+  vars:
+    directory: ../templates
+    target: "{{ vaultwarden_root }}"
+    should_notify: Restart vaultwarden service
+    files:
+      .env.vaultwarden.j2:
+        mode: "600"
+        owner: 0
+        group: 0
+      backup.j2:
+        mode: "750"
+        owner: 0
+        group: 0
+      restore.j2:
+        mode: "750"
+        owner: 0
+        group: 0
+
+- name: Update docker-compose images
+  ansible.builtin.import_tasks:
+    file: docker-compose-update.yml
+  vars:
+    directory: "{{ vaultwarden_root }}"
+    pull: true
+    build: true
+    should_notify: Restart vaultwarden service
+
+- name: Symlink backup configuration
+  ansible.builtin.file:
+    state: link
+    src: "{{ vaultwarden_root }}/backup.yaml"
+    path: "/etc/borgmatic.d/{{ ansible_role_name }}.yaml"
+
+- name: Ensure the app data directory exists and is accessible by Vaultwarden
+  ansible.builtin.file:
+    path: "{{ vaultwarden_root }}/app"
+    state: directory
+    mode: ug-x,ug=rwX,o-rwx
+    owner: "{{ vaultwarden_uid_gid }}"
+    group: "{{ vaultwarden_uid_gid }}"
+    recurse: true
+  changed_when: false
+
+- name: Restore from backup if requested
+  when: restore is defined
+  ansible.builtin.import_tasks:
+    file: restore.yml
+  vars:
+    restore_target_dir: "{{ vaultwarden_root }}"
+
+- name: Symlink systemd unit
+  ansible.builtin.file:
+    state: link
+    src: "{{ vaultwarden_root }}/systemd/vaultwarden.service"
+    path: "/etc/systemd/system/vaultwarden.service"
+    force: true
+  notify: Restart vaultwarden service
+
+- name: Start systemd unit
+  ansible.builtin.systemd:
+    state: started
+    enabled: true
+    name: vaultwarden.service
+    daemon_reload: true
+  register: vaultwarden_started
+
+- name: Ensure service domain is registered on router
+  ansible.builtin.import_tasks:
+    file: router-update-dns.yml
+  vars:
+    machine_ip: "{{ ansible_facts.default_ipv4.address }}"
+    service_url: "{{ vaultwarden_domain }}"
+
+- name: Set up observability
+  ansible.builtin.import_tasks:
+    file: setup-observability.yml
+  vars:
+    directory: "{{ vaultwarden_root }}"

@@ -1,0 +1,20 @@
+---
+- name: Deploy services on Proxmox hypervisors
+  hosts: proxmox
+  roles:
+    - role: lae.proxmox
+      vars:
+        # Would remove Proxmox completely.
+        # https://github.com/lae/ansible-role-proxmox/issues/223
+        pve_remove_old_kernels: false
+      tags: proxmox
+    
+    - role: system-users
+      tags:
+        - system-users
+    - role: proxmox
+      tags: 
+        - proxmox
+        - vms
+#    - role: postfix
+#      tags: postfix

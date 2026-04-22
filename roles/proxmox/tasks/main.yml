@@ -1,0 +1,31 @@
+# - name: Configure IOMMU for PCI passthrough
+#   ansible.builtin.import_tasks: iommu.yml
+
+#- name: Configure DNS
+#  ansible.builtin.import_tasks: dns.yml
+
+#- name: Configure network interfaces
+#  ansible.builtin.import_tasks: network-interfaces.yml
+
+# - name: Configure firewall for the Proxmox host
+#   ansible.builtin.import_tasks: firewall.yml
+
+- name: Ensure pip is installed
+  ansible.builtin.package:
+    name:
+      - python3-pip
+
+- name: Ensure proxmoxer and requests are installed
+  ansible.builtin.pip:
+    name:
+      # renovate: pypi
+      - proxmoxer==2.2.0
+      # renovate: pypi
+      - requests==2.32.5
+    break_system_packages: true
+
+- name: Configure ACME account
+  ansible.builtin.import_tasks: acme-account.yml
+
+- name: Create VMs
+  ansible.builtin.import_tasks: create-vms.yml

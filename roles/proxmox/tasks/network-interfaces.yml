@@ -1,0 +1,32 @@
+- name: Configure /etc/network/interfaces
+  ansible.builtin.template:
+    src: "templates/{{ inventory_hostname }}/interfaces.j2"
+    dest: /etc/network/interfaces
+    owner: 0
+    group: 0
+    mode: '644'
+    lstrip_blocks: true
+  notify: Reload network interfaces
+
+- name: Ensure host IP is included in /etc/hosts
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    search_string: "{{ inventory_hostname }}"
+    line: >-
+      {{ interfaces.management.ip4.address | ansible.utils.ipaddr('address') }}
+      {{ pve_fqdn }}
+      {{ inventory_hostname }}
+    state: present
+    backup: true
+
+- name: Ensure WebAuthn can be used
+  ansible.builtin.lineinfile:
+    path: /etc/pve/datacenter.cfg
+    regexp: "^webauthn:"
+    line: >-
+      webauthn: rp={{ pve_fqdn }},origin=https://{{ pve_fqdn }}:8006,id={{ pve_fqdn }}
+    state: present
+    backup: true
+
+- name: Reload network interfaces if required
+  ansible.builtin.meta: flush_handlers

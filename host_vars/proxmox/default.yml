@@ -1,0 +1,10 @@
+pve_fqdn: proxmox.strieter.dev
+proxmox_api_user: '{{ vault_proxmox_api_user }}'
+proxmox_api_token_id: '{{ vault_proxmox_api_token_id }}'
+proxmox_api_token_secret: '{{ vault_proxmox_api_token_secret }}'
+pve_acme_account_id: proxmox
+pve_acme_account_email: frank.strieter@gmail.com  
+inwx:
+  acme:
+    username: '{{ inwx_username }}'
+    password: '{{ inwx_password }}'

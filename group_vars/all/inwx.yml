@@ -1,0 +1,2 @@
+inwx_username: '{{ vault_inwx_username}}'
+inwx_password: '{{ vault_inwx_password }}'

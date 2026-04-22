@@ -1,0 +1,13 @@
+vm:
+  host: proxmox
+  id: 101
+  cores: 4
+  memory: 2048
+  net:
+    net0: "virtio,bridge=vmbr0,firewall=1"
+  scsi:
+    scsi0: pve-data:50,discard=on,iothread=1
+  efi_disk_storage: pve-data
+#  usb:
+    # Sonoff Zigbee stick.
+#    usb0: host=10c4:ea60

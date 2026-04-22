@@ -1,0 +1,33 @@
+- name: Configure guest OS manually
+  when: lxc_guests | length > 0 or vm_guests | length > 0
+  ansible.builtin.fail:
+    msg: |
+      One or more LXC or VM guests were created. Please install the guest OS
+      manually and then rerun the playbook. This is not an error, but there is
+      no other way to end a playbook in Ansible.
+
+      LXCs created:
+
+      {{ lxc_guests | ansible.builtin.to_nice_yaml }}
+
+      Guest VMs created:
+
+      {{ vm_guests | ansible.builtin.to_nice_yaml }}
+  vars:
+    lxc_guests: >-
+      {{
+        proxmox_lxc_guests_created.results |
+        default([]) |
+        selectattr('changed') |
+        selectattr('msg', 'match', 'Created\s') |
+        ansible.builtin.items2dict(key_name = 'vmid',
+                                   value_name = 'msg')
+      }}
+    vm_guests: >-
+      {{
+        proxmox_vm_guests_created.results |
+        default([]) |
+        selectattr('changed') |
+        ansible.builtin.items2dict(key_name = 'vmid',
+                                   value_name = 'msg')
+      }}

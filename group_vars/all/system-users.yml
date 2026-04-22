@@ -1,0 +1,12 @@
+system_users:
+  fst:
+    name: Frank Strieter
+    shell: /bin/bash
+    groups:
+      - docker
+      - "{{ passwordless_sudo_group }}"
+      - sudo
+      - adm
+    github: FrankStrieter
+
+

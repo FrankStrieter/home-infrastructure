@@ -1,0 +1,4 @@
+acme_account_id: default
+acme_account_email: frank.strieter@gmail.com
+inwx_username: '{{ vault_inwx_username}}'
+inwx_password: '{{ vault_inwx_password }}'

@@ -1,0 +1,51 @@
+[Unit]
+Description=Traefik
+BindsTo=docker.service
+After=docker.service
+OnFailure=unit-status-mail@%n.service
+
+[Service]
+# docker stop/rm just in case the container has not been removed (e.g. the
+# system crashed).
+ExecStartPre=-/usr/bin/docker container stop '%p'
+ExecStartPre=-/usr/bin/docker container rm '%p'
+
+# May fail when the network already exists.
+ExecStartPre=-/usr/bin/docker network \
+                              create \
+                              --ipv6 \
+                              --subnet fd00:dead:beef::/48 \
+                              web
+
+# --add-host=host.docker.internal:host-gateway is required to access services
+# on the host network.
+ExecStart=/usr/bin/docker container \
+                          run \
+                          --rm \
+                          --name '%p' \
+                          --network web \
+                          --publish 80:80 \
+                          --publish 443:443 \
+                          --volume /var/run/docker.sock:/var/run/docker.sock:z \
+                          --privileged \
+                          --volume '/etc/localtime:/etc/localtime:ro' \
+                          --volume '{{ traefik_root }}/conf/acme/:/etc/traefik/acme/' \
+                          --volume '{{ traefik_root }}/conf/traefik.yaml:/etc/traefik/traefik.yaml:ro' \
+                          --volume '{{ traefik_dynamic_file_configuration }}:/etc/traefik/conf.d/:ro' \
+                          --label "traefik.http.routers.traefik-secure.tls.domains[0].main={{ domain }}" \
+                          --label "traefik.http.routers.traefik-secure.tls.domains[0].sans=*.{{ domain }}" \
+                          --label "traefik.http.routers.traefik-secure.service=api@internal" \
+                          --add-host=host.docker.internal:host-gateway \
+                          --health-cmd 'traefik healthcheck' \
+                          -e "INWX_USERNAME={{ vault_traefik_acme_inwx_user | mandatory }}" \
+                          -e "INWX_PASSWORD={{ vault_traefik_acme_inwx_password | mandatory }}" \
+                          {{ traefik_image | mandatory | quote }}
+
+ExecStop=/usr/bin/docker container stop '%p'
+
+# Restart 2 seconds after docker run exited with an error status.
+Restart=always
+RestartSec=2s
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,4 @@
+traefik_root: /data/traefik
+
+traefik_dynamic_file_configuration: "{{ traefik_root }}/conf/conf.d/"
+traefik_image: traefik:latest

@@ -1,0 +1,3 @@
+gatus_root: "/data/{{ ansible_role_name }}"
+
+gatus_header: Status

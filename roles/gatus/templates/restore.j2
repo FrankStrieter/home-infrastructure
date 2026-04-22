@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+# vim: set ft=jinja-shell ts=2 sw=2 et:
+
+set -euo pipefail
+
+# cd into script directory.
+cd -- "$(cd "$(dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd)"
+
+role={{ ansible_role_name | ansible.builtin.quote }}
+compose=(docker compose --project-name "$role")
+
+db() {
+  "${compose[@]}" down \
+                  --volumes \
+                  db
+
+  # This starts the db service and waits for it to be healthy.
+  "${compose[@]}" up \
+                  --wait \
+                  db
+
+  "${compose[@]}" exec \
+                  --no-TTY \
+                  db \
+                  dropdb \
+                  --username=gatus \
+                  gatus
+
+  "${compose[@]}" exec \
+                  --no-TTY \
+                  db \
+                  psql \
+                  --username=gatus \
+                  --dbname=postgres \
+    < {{ gatus_root | ansible.builtin.quote }}/backups/db.sql
+}
+
+if systemctl is-active "$role" > /dev/null; then
+  start_stop=
+fi
+
+if [[ -v start_stop ]]; then
+  systemctl stop "$role"
+fi
+
+db
+
+if [[ -v start_stop ]]; then
+  systemctl start "$role"
+fi

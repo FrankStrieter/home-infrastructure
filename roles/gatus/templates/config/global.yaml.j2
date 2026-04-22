@@ -1,0 +1,10 @@
+# Metrics exposed at /metrics.
+metrics: true
+debug: false
+storage:
+  type: postgres
+  path: "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}?sslmode=disable"
+ui:
+  title: {{ gatus_header }}
+  header: {{ gatus_header }}
+  link: https://{{ gatus_domain }}

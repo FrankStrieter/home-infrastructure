@@ -1,0 +1,5 @@
+- name: Restart Gatus
+  when: gatus_started is not changed
+  ansible.builtin.systemd:
+    name: "{{ ansible_role_name }}.service"
+    state: restarted

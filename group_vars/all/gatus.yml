@@ -1,0 +1,7 @@
+# gatus_backup_healthcheck: "{{ vault_gatus_backup_healthcheck }}"
+
+gatus_domain: "status.{{ domain }}"
+
+gatus_config_directory: /data/gatus/config
+
+gatus_telegram_bot_token: "{{ vault_gatus_telegram_bot_token }}"

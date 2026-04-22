@@ -1,0 +1,9 @@
+endpoints:
+  - name: Borg Pool SSH
+    group: Infrastructure
+    url: ssh://backup.strieter.dev
+    interval: 5m
+    conditions:
+      - "[CONNECTED] == true"
+    alerts:
+      - type: telegram

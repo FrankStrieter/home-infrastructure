@@ -1,0 +1,4 @@
+maintenance:
+  start: 23:25
+  duration: 15m
+  timezone: "Europe/Berlin"

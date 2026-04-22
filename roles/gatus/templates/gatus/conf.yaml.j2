@@ -1,0 +1,8 @@
+endpoints:
+  - name: This status page
+    group: Infrastructure
+    url: https://{{ gatus_domain }}
+    interval: 5m
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY] == pat(*<title>{{ gatus_header }}</title>*)"

@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# vim: set ft=jinja-shell ts=2 sw=2 et:
+
+set -euo pipefail
+
+cleanup() {
+  printf 'Cleaning up backup directory.\n'
+  rm -rf -- {{ gatus_root | ansible.builtin.quote }}/backups
+  mkdir --parents -- {{ gatus_root | ansible.builtin.quote }}/backups
+}
+
+db() {
+  docker compose \
+         --project-name {{ ansible_role_name | ansible.builtin.quote }} \
+         exec \
+         --env PGPASSWORD=gatus \
+         db \
+         pg_dumpall \
+         --username=gatus \
+    > {{ gatus_root | ansible.builtin.quote }}/backups/db.sql
+}
+
+trap cleanup ERR SIGINT SIGTERM
+
+cleanup
+db

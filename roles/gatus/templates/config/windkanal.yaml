@@ -1,0 +1,18 @@
+endpoints:
+  - name: Erreichbarkeit Website
+    group: windKanal
+    url: https://windkanal-ev.de
+    interval: 5m
+    conditions:
+      - "[STATUS] == 200"
+    alerts:
+      - type: telegram
+    
+  - name: Zertifikat gültig
+    group: windKanal
+    url: https://windkanal-ev.de
+    interval: 15m
+    conditions:
+      - "[CERTIFICATE_EXPIRATION] > 20d"
+    alerts:
+      - type: telegram

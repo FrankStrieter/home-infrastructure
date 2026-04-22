@@ -1,0 +1,57 @@
+- name: Copy templates
+  ansible.builtin.import_tasks: copy-templates.yml
+  vars:
+    directory: ../templates
+    target: "{{ gatus_root }}"
+    should_notify: Restart Gatus # noqa: var-naming[no-reserved]
+
+- name: Restore from backup if requested
+  when: restore is defined
+  ansible.builtin.import_tasks:
+    file: restore.yml
+  vars:
+    restore_target_dir: "{{ gatus_root }}"
+
+- name: Update docker-compose images
+  ansible.builtin.import_tasks:
+    file: docker-compose-update.yml
+  vars:
+    directory: "{{ gatus_root }}"
+    pull: "{{ docker_update is defined }}"
+    build: "{{ docker_update is defined }}"
+    should_notify: Restart Gatus # noqa: var-naming[no-reserved]
+
+- name: Symlink systemd unit
+  ansible.builtin.file:
+    state: link
+    src: "{{ gatus_root }}/{{ ansible_role_name }}.service"
+    path: "/etc/systemd/system/{{ ansible_role_name }}.service"
+    force: true
+  notify: Restart Gatus
+
+- name: Start systemd unit
+  ansible.builtin.systemd:
+    state: started
+    enabled: true
+    name: "{{ ansible_role_name }}.service"
+    daemon_reload: true
+  register: gatus_started
+
+- name: Symlink backup configuration
+  ansible.builtin.file:
+    state: link
+    src: "{{ gatus_root }}/backup.yaml"
+    path: "/etc/borgmatic.d/{{ ansible_role_name }}.yaml"
+
+- name: Set up observability
+  ansible.builtin.import_tasks:
+    file: setup-observability.yml
+  vars:
+    directory: "{{ gatus_root }}"
+
+- name: Ensure service domain is registered on router
+  ansible.builtin.import_tasks:
+    file: router-update-dns.yml
+  vars:
+    machine_ip: "{{ ansible_facts.default_ipv4.address }}"
+    service_url: "{{ gatus_domain }}"

@@ -1,0 +1,15 @@
+- name: Install docker
+  ansible.builtin.include_role:
+    name: geerlingguy.docker
+
+- name: Support docker management via ansible
+  ansible.builtin.include_role:
+    name: geerlingguy.pip
+  vars:
+    pip_install_packages:
+      - name: docker
+
+- name: Restart docker.service
+  ansible.builtin.systemd:
+    name: docker.service
+    state: restarted

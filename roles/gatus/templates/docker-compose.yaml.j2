@@ -1,0 +1,51 @@
+networks:
+  web:
+    external: true
+
+volumes:
+  postgres-data:
+
+services:
+  app:
+    image: twinproduction/gatus:v5.35.0
+    environment:
+      GATUS_CONFIG_PATH: /config
+      POSTGRES_USER: gatus
+      POSTGRES_PASSWORD: gatus
+      POSTGRES_DB: gatus
+    volumes:
+      - {{ gatus_config_directory }}:/config:ro
+    labels:
+      - traefik.enable=true
+
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}-app.entrypoints=https
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}-app.rule=Host(`{{ gatus_domain }}`)
+      - traefik.http.services.${COMPOSE_PROJECT_NAME}-app.loadbalancer.server.port=8080
+    networks:
+      - default
+      - web
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: gatus
+      POSTGRES_PASSWORD: gatus
+      POSTGRES_DB: gatus
+      POSTGRES_INITDB_ARGS: --locale-provider=icu --icu-locale=de-DE
+      TZ: Europe/Berlin
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        - CMD
+        - psql
+        - --username=gatus
+        - --dbname=gatus
+        - --command=select 1
+      interval: 5s
+      timeout: 5s
+      retries: 3
+      start_period: 5s

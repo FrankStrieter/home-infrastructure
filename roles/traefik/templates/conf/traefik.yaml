@@ -1,0 +1,46 @@
+providers:
+  docker:
+    # Need to configure label traefik.enable=true.
+    exposedByDefault: false
+    # All traefik-enabled containers must be on this network.
+    network: web
+  file:
+    directory: /etc/traefik/conf.d
+    watch: true
+
+api:
+  dashboard: true
+
+# docker exec traefik traefik healthcheck
+ping: {}
+
+log:
+  level: INFO
+
+entryPoints:
+  http:
+    address: ":80"
+    http:
+      redirections:
+        entryPoint:
+          to: https
+          scheme: https
+          permanent: true
+
+  https:
+    address: ":443"
+    http:
+      tls:
+        certResolver: letsencrypt
+  
+  mqtt:
+    address: ":1883"
+
+certificatesResolvers:
+  letsencrypt:
+    acme:
+      email: frank.strieter+letsencrypt@gmail.com
+      storage: /etc/traefik/acme/le.json
+      dnsChallenge:
+        provider: inwx
+        delayBeforeCheck: '30'

@@ -1,0 +1,7 @@
+- name: Add user
+  ansible.builtin.import_tasks:
+    file: add-user.yml
+
+- name: Remove user
+  ansible.builtin.import_tasks:
+    file: remove-user.yml

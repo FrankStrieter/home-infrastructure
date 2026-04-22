@@ -1,0 +1,6 @@
+scrape_configs:
+  - job_name: {{ ansible_role_name }}
+    scheme: https
+    static_configs:
+      - targets:
+          - {{ gatus_domain }}

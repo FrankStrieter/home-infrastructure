@@ -2,12 +2,15 @@ receivers:
   otlp:
     protocols:
       grpc:
+        endpoint: 0.0.0.0:4317
       # Disable HTTP transport.
       # http:
 
 exporters:
-  logging:
-    loglevel: debug
+  debug:
+    verbosity: detailed
+    sampling_initial: 5
+    sampling_thereafter: 200
 
   otlp:
     endpoint: jaeger:4317
@@ -60,3 +63,8 @@ service:
       exporters:
         # - logging
         - prometheus
+
+extensions:
+  health_check:
+  health_check/1:
+    endpoint: "0.0.0.0:13133"

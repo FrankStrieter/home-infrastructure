@@ -1,15 +1,16 @@
 services:
   nsupdate:
-    image: git.debilux.org/chris/nsupdate
+    image: favonia/cloudflare-ddns:1.16.2
+    user: "1000:1000"
+    read_only: true
+    cap_drop: [all]
+    security_opt: [no-new-privileges:true]
     environment:
       - SCHEDULE="*\30 * * * *"
       - TZ=Europe/Berlin
-      - NSUPDATE_INWX_USER={{ inwx_username }}
-      - NSUPDATE_INWX_PASSWORD={{ inwx_password }}
-      - DEBUG=true
-    volumes:
-      - {{ dns_update_root }}/config:/config
-      - {{ dns_update_root }}/log:/log
+      - CLOUDFLARE_API_TOKEN={{ cloudflare_token }}
+        # Your Cloudflare API token
+      - DOMAINS=strieter.dev
     networks:
       - ip6net
       - default

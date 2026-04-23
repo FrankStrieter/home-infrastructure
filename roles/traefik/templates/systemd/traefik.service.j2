@@ -37,8 +37,9 @@ ExecStart=/usr/bin/docker container \
                           --label "traefik.http.routers.traefik-secure.service=api@internal" \
                           --add-host=host.docker.internal:host-gateway \
                           --health-cmd 'traefik healthcheck' \
-                          -e "INWX_USERNAME={{ vault_traefik_acme_inwx_user | mandatory }}" \
-                          -e "INWX_PASSWORD={{ vault_traefik_acme_inwx_password | mandatory }}" \
+                          -e "CLOUDFLARE_EMAIL={{ cloudflare_email | mandatory }}" \
+                          -e "CLOUDFLARE_ZONE_API_TOKEN={{ cloudflare_token | mandatory }}" \
+                          -e "CLOUDFLARE_DNS_API_TOKEN={{ cloudflare_token | mandatory }}" \
                           {{ traefik_image | mandatory | quote }}
 
 ExecStop=/usr/bin/docker container stop '%p'

@@ -42,5 +42,5 @@ certificatesResolvers:
       email: frank.strieter+letsencrypt@gmail.com
       storage: /etc/traefik/acme/le.json
       dnsChallenge:
-        provider: inwx
+        provider: cloudflare
         delayBeforeCheck: '30'

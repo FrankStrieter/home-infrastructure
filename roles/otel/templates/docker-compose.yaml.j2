@@ -57,7 +57,7 @@ services:
       interval: 5s
 
   grafana:
-    image: grafana/grafana:11.4.0
+    image: grafana/grafana:13.0.1
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - ./grafana/provisioning:/etc/grafana/provisioning:ro

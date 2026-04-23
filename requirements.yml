@@ -2,7 +2,7 @@ roles:
   - name: geerlingguy.docker
     version: 7.8.0
   - name: geerlingguy.pip
-    version: 3.1.0
+    version: 3.1.2
   - name: lae.proxmox
     version: v1.10.0
   - name: aruhier.systemd_networkd

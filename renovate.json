@@ -1,0 +1,50 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":disableDigestUpdates",
+    ":disableRateLimiting",
+    ":enableVulnerabilityAlerts",
+    ":rebaseStalePrs",
+    ":semanticCommitsDisabled"
+  ],
+  "labels": ["dependencies"],
+  "docker-compose": {
+    "managerFilePatterns": ["/(^|/)(?:docker-)?compose[^/]*\\.ya?ml\\.j2$/"]
+  },
+  "customManagers": [
+    {
+      "description": "Magic comments",
+      "customType": "regex",
+      "managerFilePatterns": ["/(^|/).+\\.(ya?ml|j2)$/"],
+      "matchStrings": [
+        "# renovate: (?<datasource>[a-z-.]+?)=(?<packageName>.+?)(?: depName=(?<depName>.+?))?(?: versioning=(?<versioning>[a-z-]+?))?\\s.+?\\w+?[:=]\\s*(?<currentValue>.+?)\\s",
+        "# renovate: (?<datasource>pypi)(?: depName=(?<depName>.+?))?(?: versioning=(?<versioning>[a-z-]+?))?\\s.+?(?<packageName>\\w+?)==\\s*(?<currentValue>.+?)\\s"
+      ]
+    }
+  ],
+  "packageRules": [
+    {
+      "description": "Non-SemVer image: https://github.com/healthchecks/healthchecks/issues/1276",
+      "matchPackageNames": ["healthchecks/healthchecks"],
+      "versioning": "loose"
+    },
+    {
+      "description": "Major updates require manual backup and restore",
+      "matchPackageNames": ["postgres"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
+    },
+    {
+      "description": "From MariaDB 12.3 every .3 release will be a LTS release, https://endoflife.date/mariadb#release-cadence",
+      "matchPackageNames": ["mariadb"],
+      "allowedVersions": "/^[0-9]+\\.3(\\.[0-9]+)?$/",
+      "changelogUrl": "https://github.com/MariaDB/server"
+    },
+    {
+      "description": "Allow known MySQL stable releases, https://endoflife.date/mysql",
+      "matchPackageNames": ["mysql"],
+      "allowedVersions": "/^(8\\.4|9\\.7)(\\.[0-9]+)?$/"
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+endpoints:
+  - name: Renovate Bot
+    group: Infrastructure
+    url: https://{{ renovate_domain }}/health
+    interval: 5m
+    conditions:
+      - "[STATUS] == 200"
+    alerts:
+      - type: telegram

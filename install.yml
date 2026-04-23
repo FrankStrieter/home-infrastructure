@@ -51,6 +51,10 @@
       tags:
         - otel
         - observability
+    - role: renovate
+      tags:
+        - renovate
+        - dependabot
 
 - name: Deploy services for backup
   hosts: backup

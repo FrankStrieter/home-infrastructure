@@ -4,7 +4,7 @@ networks:
 
 services:
   app:
-    image: vaultwarden/server:1.35.7-alpine
+    image: vaultwarden/server:1.35.8-alpine
     restart: unless-stopped
     user: "{{ vaultwarden_uid_gid | ansible.builtin.mandatory }}:{{ vaultwarden_uid_gid }}"
     networks:

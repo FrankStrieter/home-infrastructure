@@ -14,8 +14,14 @@ api:
 # docker exec traefik traefik healthcheck
 ping: {}
 
+metrics:
+  prometheus:
+    addRoutersLabels: true
+    addEntryPointsLabels: true
+    entryPoint: https
+
 log:
-  level: INFO
+  level: TRACE
 
 entryPoints:
   http:

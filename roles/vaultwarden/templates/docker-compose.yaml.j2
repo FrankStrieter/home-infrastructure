@@ -18,6 +18,7 @@ services:
       - traefik.enable=true
       - traefik.http.routers.${COMPOSE_PROJECT_NAME}-app.rule=Host(`{{ vaultwarden_domain | mandatory }}`)
       - traefik.http.routers.${COMPOSE_PROJECT_NAME}-app.entrypoints=https
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}-app.middlewares=rate-limit@file,security-headers@file
 
   tunnel:
     image: cloudflare/cloudflared:2026.3.0 

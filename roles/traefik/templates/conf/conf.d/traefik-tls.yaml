@@ -33,3 +33,8 @@ http:
         stsSeconds: 31536000                 # Strict-Transport-Security: max-age
         stsIncludeSubdomains: false
         stsPreload: false
+    rate-limit:
+      rateLimit:
+        average: 20
+        period: 1s
+        burst: 1

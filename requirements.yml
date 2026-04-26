@@ -4,7 +4,7 @@ roles:
   - name: geerlingguy.pip
     version: 3.1.2
   - name: lae.proxmox
-    version: v1.10.0
+    version: v1.10.1
   - name: aruhier.systemd_networkd
 
 collections:

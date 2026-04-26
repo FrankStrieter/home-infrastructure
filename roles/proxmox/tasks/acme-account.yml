@@ -24,33 +24,32 @@
           'Do you agree to the above terms?': 'y'
         echo: true
 
-- name: Check if the INWX DNS plugin is configured
+- name: Check if the CLOUDFLARE DNS plugin is configured
   ansible.builtin.command:
     argv:
       - pvenode
       - acme
       - plugin
       - config
-      - inwx-dns
-  register: inwx_dns_plugin
+      - cloudflare
+  register: cloudflare_dns_plugin
   changed_when: false
   failed_when: false
 
-- name: Configure INWX DNS plugin
-  when: inwx_dns_plugin.rc != 0
+- name: Configure CLOUDFLARE DNS plugin
+  when: cloudflare_dns_plugin.rc != 0
   block:
-    - name: Create file with INWX authentication data
+    - name: Create file with Cloudflare authentication data
       ansible.builtin.copy:
-        dest: /tmp/inwx-auth
+        dest: /tmp/cloudflare-auth
         content: |
-          INWX_User={{ inwx.acme.username | mandatory }}
-          INWX_Password={{ inwx.acme.password | mandatory }}
-          INWX_Shared_Secret=
+          CF_Token={{ cloudflare_token | mandatory }}
+          CF_Account_Id={{ cloudflare_account_id | mandatory }}
         owner: 0
         group: 0
         mode: '400'
 
-    - name: Register INWX DNS plugin
+    - name: Register CLOUDFLARE DNS plugin
       ansible.builtin.command:
         argv:
           - pvenode
@@ -58,17 +57,17 @@
           - plugin
           - add
           - dns
-          - inwx-dns
+          - cloudflare
           - --api
-          - inwx
+          - cf
           - --data
-          - /tmp/inwx-auth
+          - /tmp/cloudflare-auth
       changed_when: true
 
   always:
-    - name: Remove INWX authentication data file
+    - name: Remove Cloudlare authentication data file
       ansible.builtin.file:
-        dest: /tmp/inwx-auth
+        dest: /tmp/cloudflare-auth
         state: absent
 
 - name: Get default ACME account
@@ -105,14 +104,14 @@
   changed_when: false
 
 - name: Configure ACME domain
-  when: not pve_fqdn ~ ',plugin=inwx-dns' in acme_domain.stdout
+  when: not pve_fqdn ~ ',plugin=cloudflare' in acme_domain.stdout
   ansible.builtin.command:
     argv:
       - pvenode
       - config
       - set
       - -acmedomain0
-      - "{{ pve_fqdn }},plugin=inwx-dns"
+      - "{{ pve_fqdn }},plugin=cloudflare"
   changed_when: true
 
 # Not sure if this works. Ordering seems impossible when a certificate is still

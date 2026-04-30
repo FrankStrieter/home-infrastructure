@@ -3,5 +3,5 @@ traefik_root: /data/traefik
 traefik_dynamic_file_configuration: "{{ traefik_root }}/conf/conf.d/"
 
 # renovate: docker=traefik
-traefik_image_version: v3.6.14
+traefik_image_version: v3.6.15
 traefik_image: "traefik:{{ traefik_image_version }}"

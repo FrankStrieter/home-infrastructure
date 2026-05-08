@@ -35,6 +35,10 @@ http:
         stsPreload: false
     rate-limit:
       rateLimit:
-        average: 20
+        average: 45
         period: 1s
         burst: 1
+    robotsTxt:
+      plugin:
+        robots-txt:
+          aiRobotsTxt: true

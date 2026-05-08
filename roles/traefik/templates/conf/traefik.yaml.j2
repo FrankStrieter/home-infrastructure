@@ -21,7 +21,20 @@ metrics:
     entryPoint: https
 
 log:
-  level: TRACE
+  level: INFO
+
+accessLog:
+  filters:
+    statusCodes:
+      - "400-451"
+      - "500-511"
+    retryAttempts: true
+
+experimental:
+  plugins:
+    robots-txt:
+      moduleName: github.com/solution-libre/traefik-plugin-robots-txt
+      version: v0.2.2
 
 entryPoints:
   http:

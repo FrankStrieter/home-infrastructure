@@ -85,10 +85,9 @@
         - otel
         - observability
         - node-exporter
-    - role: otel
-      tags:
-        - otel
-        - observability
+    - role: borg-pool
+        - borg-pool
+        - storage
 
 - name: Routers
   hosts: router

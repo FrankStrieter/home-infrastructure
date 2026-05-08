@@ -6,11 +6,11 @@
     state: present
     variables:
       cloudflare_email: "{{ cloudflare_email }}"
-      cloudflare_account_id: "{{ cloudflare_account_id  }}"
+      cloudflare_account_id: "{{ cloudflare_account_id }}"
       cloudflare_token: "{{ cloudflare_token }}"
       cloudflare_zone_id: "{{ cloudflare_zone_id }}"
       domain: "{{ renovate_domain }}"
-  register: terraform
+  register: renovate_terraform
 
 - name: Copy templates
   ansible.builtin.import_tasks: copy-templates.yml

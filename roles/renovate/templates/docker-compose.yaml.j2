@@ -93,4 +93,4 @@ services:
     image: cloudflare/cloudflared:2026.3.0 
     command: tunnel run
     environment:
-      - TUNNEL_TOKEN={{ terraform.outputs.tunnel_token.value.token }} 
+      - TUNNEL_TOKEN={{ renovate_terraform.outputs.tunnel_token.value.token }} 

@@ -86,8 +86,9 @@
         - observability
         - node-exporter
     - role: borg-pool
-        - borg-pool
-        - storage
+      tags:
+      - borg-pool
+      - storage
 
 - name: Routers
   hosts: router

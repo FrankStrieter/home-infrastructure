@@ -32,6 +32,21 @@ resource "cloudflare_zero_trust_tunnel_cloudflared_config" "tunnel_config" {
   }
 }
 
+resource "cloudflare_ruleset" "zone_custom_firewall" {
+  zone_id     = var.cloudflare_zone_id
+  name        = "Phase entry point ruleset for custom rules in my zone"
+  description = ""
+  kind        = "zone"
+  phase       = "http_request_firewall_custom"
+
+  rules = [{
+    ref         = "block_geo_locations"
+    description = "Block Traffic from various countries"
+    expression  = "(ip.src.country in {\"US\" \"NL\" \"IT\"})"
+    action      = "block"
+  }]
+}
+
 resource "cloudflare_dns_record" "app" {
   zone_id = var.cloudflare_zone_id
   name = split(".", var.domain)[0]

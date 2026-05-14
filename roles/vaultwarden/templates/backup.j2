@@ -15,7 +15,7 @@ db() {
 
   docker run \
          --rm \
-         --volumes-from $(docker compose --project-name {{ ansible_role_name | ansible.builtin.quote }} ps --format {% raw %}'{{.ID}}'{% endraw %}) \
+         --volumes-from $(docker ps --filter name={{ ansible_role_name | ansible.builtin.quote }}-app --filter status=running --format {% raw %}'{{.ID}}'{% endraw %}) \
          "alpine/sqlite:$sqlite_version" \
          /data/db.sqlite3 \
          .dump \

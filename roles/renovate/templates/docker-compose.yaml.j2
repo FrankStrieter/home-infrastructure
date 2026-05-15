@@ -90,7 +90,7 @@ services:
         condition: service_healthy
 
   tunnel:
-    image: cloudflare/cloudflared:2026.3.0 
+    image: cloudflare/cloudflared:2026.5.0 
     command: tunnel run
     environment:
       - TUNNEL_TOKEN={{ renovate_terraform.outputs.tunnel_token.value.token }} 

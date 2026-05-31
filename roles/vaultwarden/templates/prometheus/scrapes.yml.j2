@@ -1,0 +1,6 @@
+scrape_configs:
+  - job_name: vaultwarden-cloudflare-tunnel
+    scheme: https
+    static_configs:
+      - targets:
+          - {{ vaultwarden_tunnel_domain }}

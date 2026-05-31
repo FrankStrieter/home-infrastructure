@@ -5,5 +5,8 @@ endpoints:
     interval: 1m
     conditions:
       - "[STATUS] == 200"
+    headers:
+      # needed for traefik real ip plugin, otherwise it will throw an error
+      Cf-Connecting-Ip: 192.168.1.1 
     alerts:
       - type: telegram

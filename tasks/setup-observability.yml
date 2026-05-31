@@ -14,3 +14,20 @@
     owner: 0
     group: 0
     mode: '644'
+
+- name: Copy Prometheus scrape configuration
+  when: src | length > 0
+  ansible.builtin.template:
+    src: "{{ src }}"
+    dest: >-
+      {{ prometheus_scrapes_config_directory }}/{{
+      ansible_role_name }}.yml
+    owner: 0
+    group: 0
+    mode: "644"
+  vars:
+    templates:
+      - "{{ template | default(None) }}"
+      - "../roles/{{ ansible_role_name }}/templates/prometheus/scrapes.yml.j2"
+    candidates: "{{ templates | select('string') | select }}"
+    src: "{{ lookup('ansible.builtin.first_found', candidates, skip=true, wantlist=true) | first | default('') }}"

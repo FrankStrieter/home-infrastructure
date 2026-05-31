@@ -1,4 +1,5 @@
 vaultwarden_domain: passwords.{{ domain }}
+vaultwarden_tunnel_domain: passwords-tunnel.{{ domain }}
 vaultwarden_admin_token: "{{ vault_vaultwarden_admin_token }}"
 
 vaultwarden_smtp_user: "{{ vault_vaultwarden_smtp_user }}"

@@ -19,22 +19,35 @@ metrics:
     addRoutersLabels: true
     addEntryPointsLabels: true
     entryPoint: https
+    manualRouting: true
 
+experimental:
+  plugins:
+    robotsTxt:
+      moduleName: github.com/solution-libre/traefik-plugin-robots-txt
+      version: v0.2.2
+    traefik-real-ip:
+      moduleName: github.com/zekihan/traefik-real-ip
+      version: v0.1.20
 log:
   level: INFO
 
 accessLog:
-  filters:
-    statusCodes:
-      - "400-451"
-      - "500-511"
-    retryAttempts: true
-
-experimental:
-  plugins:
-    robots-txt:
-      moduleName: github.com/solution-libre/traefik-plugin-robots-txt
-      version: v0.2.2
+  format: json
+  fields:
+    defaultMode: drop
+    names:
+      requestPath: keep
+      requestMethod: keep
+      requestProtocol: keep
+      requestScheme: keep
+      routerName: keep
+      time: keep
+      originStatus: keep
+    headers:
+      defaultMode: drop
+      names:
+        CF-Connecting-IP: keep
 
 entryPoints:
   http:

@@ -35,10 +35,18 @@ http:
         stsPreload: false
     rate-limit:
       rateLimit:
-        average: 45
+        average: 60
         period: 1s
-        burst: 1
+        burst: 10
     robotsTxt:
       plugin:
         robots-txt:
           aiRobotsTxt: true
+    traefik-real-ip:
+      plugin:
+        traefik-real-ip:
+          thrustLocal: true
+          thrustCloudFlare: true
+          thrustEdgeOne: false
+          logLevel: debug
+          denyUntrusted: true

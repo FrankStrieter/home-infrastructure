@@ -1,0 +1,20 @@
+[DEFAULT]
+# Ban settings
+bantime = {{ fail2ban_default_bantime }}
+findtime = {{ fail2ban_default_findtime }}
+maxretry = {{ fail2ban_default_maxretry }}
+
+# Ignored IPs (never ban these)
+# ignoreip = {{ fail2ban_ignoreip | join(' ') }}
+
+# Action settings
+banaction = nftables-multiport
+banaction_allports = nftables-allports
+action = cloudflare-list[
+    cfapitoken={{cloudflare_token}},
+    cfaccountid={{ cloudflare_account_id }},
+    cfbanlistid={{ fail2ban_terraform.outputs.fail2ban_list_id.value }}
+  ]
+
+# Backend
+backend = {{ fail2ban_default_backend }}

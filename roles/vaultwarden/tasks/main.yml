@@ -81,11 +81,14 @@
   register: vaultwarden_started
 
 - name: Ensure service domain is registered on router
-  ansible.builtin.import_tasks:
+  ansible.builtin.include_tasks:
     file: router-update-dns.yml
   vars:
     machine_ip: "{{ ansible_facts.default_ipv4.address }}"
-    service_url: "{{ vaultwarden_domain }}"
+    service_url: "{{ item }}"
+  with_items:
+    - "{{ vaultwarden_domain }}"
+    - "{{ vaultwarden_tunnel_domain }}"
 
 - name: Set up observability
   ansible.builtin.import_tasks:

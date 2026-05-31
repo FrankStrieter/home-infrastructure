@@ -10,6 +10,14 @@ http:
         - dashboard-auth
       tls:
         certResolver: letsencrypt
+    metrics:
+      entrypoints: https
+      rule: >-
+        Host(`traefik.{{ domain | mandatory }}`) &&
+        PathPrefix(`/metrics`)
+      service: prometheus@internal
+      tls:
+        certResolver: letsencrypt
 
   middlewares:
     dashboard-auth:

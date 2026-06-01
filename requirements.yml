@@ -10,7 +10,7 @@ roles:
 
 collections:
   - name: ansible.posix
-    version: 2.1.0
+    version: 2.2.0
   - name: community.general
     version: 13.0.0
   - name: community.docker

@@ -16,7 +16,7 @@ collections:
   - name: community.docker
     version: 5.2.1
   - name: community.proxmox
-    version: 1.6.0
+    version: 2.0.0
   - name: devsec.hardening
     version: '10.6.0'
   - name: hifis.toolkit

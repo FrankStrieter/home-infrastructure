@@ -95,3 +95,9 @@
     file: setup-observability.yml
   vars:
     directory: "{{ vaultwarden_root }}"
+
+- name: Set up fail2ban
+  ansible.builtin.import_tasks:
+    file: setup-fail2ban.yml
+  vars:
+    source_directory: "{{ vaultwarden_root }}"

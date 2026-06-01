@@ -1,0 +1,25 @@
+- name: Find all fail2ban filters in role
+  ansible.builtin.find:
+    paths: "{{ source_directory }}/fail2ban/filter"
+  register: filters
+
+- name: Find all fail2ban jails in role
+  ansible.builtin.find:
+    paths: "{{ source_directory }}/fail2ban/jail"
+  register: jails
+
+- name: Create symlinks for filters
+  ansible.builtin.file:
+    src: "{{ item.path }}"
+    path: "{{ fail2ban_filter_directory }}/{{ ansible_role_name }}-{{ item.path | basename }}"
+    state: link
+  with_items: "{{ filters.files }}"
+  notify: Restart fail2ban
+
+- name: Create symlinks for jails
+  ansible.builtin.file:
+    src: "{{ item.path }}"
+    path: "{{ fail2ban_jail_directory }}/{{ ansible_role_name }}-{{ item.path | basename }}"
+    state: link
+  with_items: "{{ jails.files }}"
+  notify: Restart fail2ban

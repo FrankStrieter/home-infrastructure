@@ -1,0 +1,7 @@
+[{{ ansible_role_name | ansible.builtin.quote }}]
+enabled = true
+port = https
+maxretry = 10
+# findtime in seconds
+findtime = 60
+filter = {{ ansible_role_name}}-bruteforce

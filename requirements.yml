@@ -6,7 +6,7 @@ roles:
   - name: lae.proxmox
     version: v1.10.1
   - name: borgbase.ansible_role_borgbackup
-    version: "v2.0.0"
+    version: "v2.1.0"
 
 collections:
   - name: ansible.posix

@@ -1,0 +1,26 @@
+borgmatic_borgbackup_install:
+  borgmatic_version: ">=2.0.0"
+  method: pip
+
+borgmatic_borgbackup_config:
+  repositories:
+    - "ssh://{{ borgmatic_ssh_host | ansible.builtin.mandatory }}/./{{ borgmatic_server_name | default(ansible_hostname) }}"
+  encryption_passphrase: >-
+      {{ borgmatic_encryption_passphrase | ansible.builtin.mandatory }}
+  source_directories:
+    - /etc
+  store_atime: false
+#  hooks:
+#    healthchecks:
+#      ping_url: "{{ borgmatic_system_backup_healthcheck }}"
+  relocated_repo_access_is_ok: true
+  extra: "{{ borgmatic_extra_config | default({}) }}"
+
+borgmatic_borgbackup_ssh:
+  key_name: "{{ borgmatic_ssh_key_name }}"
+  key_path: "{{ borgmatic_ssh_key_path }}"
+  command: >-
+    ssh -i "{{ borgmatic_ssh_key_path }}" -o StrictHostKeyChecking=accept-new
+
+borgmatic_borgbackup_timer:
+  type: ""

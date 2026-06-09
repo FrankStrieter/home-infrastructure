@@ -1,3 +1,60 @@
 borgmatic_ssh_host: "{{ borgmatic_user }}@backup.strieter.dev"
 borgmatic_user: "{{ vault_borgmatic_user }}"
 borgmatic_encryption_passphrase: "{{ vault_borgmatic_encryption_passphrase }}"
+
+borgmatic_ssh_key_name: borg-backup
+borgmatic_ssh_key_path: "/root/.ssh/{{ borgmatic_ssh_key_name }}"
+borgmatic_extra_config:
+  # Constants to use in the configuration file. Within option values, all
+  # occurrences of the constant name in curly braces will be replaced with the
+  # constant value. For example, if you have a constant named "app_name" with
+  # the value "myapp", then the string "{app_name}" will be replaced with
+  # "myapp" in the configuration file.
+  constants:
+    name: system
+
+  # A Borg pattern for filtering down the archives used by borgmatic actions
+  # that operate on multiple archives. For Borg 1.x, use a shell pattern here
+  # and see the output of "borg help placeholders" for details. For Borg 2.x,
+  # see the output of "borg help match-archives". If match_archives is not
+  # specified, borgmatic defaults to deriving the match_archives value from
+  # archive_name_format.
+  match_archives: "sh:{{ borgmatic_server_name | default('{hostname}') }}-{name}-*"
+
+  # Name of the archive to create. Borg placeholders can be used. See the output
+  # of "borg help placeholders" for details. Defaults to
+  # "{hostname}-{now:%Y-%m-%dT%H:%M:%S.%f}" with Borg 1 and "{hostname}" with
+  # Borg 2, as Borg 2 does not require unique archive names; identical archive
+  # names form a common "series" that can be targeted together. When running
+  # actions like repo-list, info, or check, borgmatic automatically tries to
+  # match only archives created with this name format.
+  archive_name_format: "{hostname}-{name}-{now}"
+
+  # Only store/extract numeric user and group identifiers. Defaults to false.
+  numeric_ids: true
+
+  # If true, the exclude_if_present filename is included in backups. Defaults to
+  # false, meaning that the exclude_if_present filename is omitted from backups.
+  keep_exclude_tags: true
+
+  # Display verbose output to the console: -2 (disabled), -1 (errors only), 0
+  # (warnings and responses to actions, the default), 1 (info about steps
+  # borgmatic is taking), or 2 (debug).
+  verbosity: 1
+
+  # Display statistics for an archive when running supported actions.
+  # Corresponds to the "--stats" flag on those actions. Defaults to false.
+  statistics: true
+
+  # Configuration for a monitoring integration with Healthchecks. Create an
+  # account at https://healthchecks.io (or self-host Healthchecks) if you'd like
+  # to use this service. See borgmatic monitoring documentation for details.
+  # healthchecks:
+    # Number of bytes of borgmatic logs to send to Healthchecks, ideally the
+    # same as PING_BODY_LIMIT configured on the Healthchecks server. Set to 0 to
+    # send all logs and disable this truncation. Defaults to 100000.
+    # ping_body_limit: 0
+
+    # Send borgmatic logs to Healthchecks as part of the "finish",
+    # "fail", and "log" states. Defaults to false.
+    # send_logs: true

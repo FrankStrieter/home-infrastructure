@@ -1,5 +1,6 @@
-vm:
+proxmox:
   host: proxmox
+  type: kvm
   id: 101
   cores: 4
   memory: 2048

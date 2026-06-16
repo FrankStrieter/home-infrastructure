@@ -1,0 +1,40 @@
+- name: Retrieve pending LXC guest config
+  community.proxmox.proxmox_vm_info:
+    api_token_id: "{{ proxmox_api_token_id | mandatory }}"
+    api_token_secret: "{{ proxmox_api_token_secret | mandatory }}"
+    api_user: "{{ proxmox_api_user | mandatory }}"
+    api_host: localhost
+    node: "{{ ansible_hostname | mandatory }}"
+    validate_certs: false
+    type: lxc
+    config: pending
+  register: proxmox_lxc_config
+
+- name: Set custom LXC config
+  ansible.builtin.import_tasks: custom.yml
+  vars:
+    guests: "{{ proxmox_lxc_guests | selectattr('lxc.custom', 'defined') | list }}"
+
+- name: Set LXC features
+  ansible.builtin.import_tasks: features.yml
+  vars:
+    config: "{{ proxmox_lxc_config }}"
+    guests: "{{ proxmox_lxc_guests | selectattr('lxc.features', 'defined') | list }}"
+
+- name: Set LXC hook scripts
+  ansible.builtin.import_tasks: hook-script.yml
+  vars:
+    config: "{{ proxmox_lxc_config }}"
+    guests: "{{ proxmox_lxc_guests | selectattr('lxc.hookscript', 'defined') | list }}"
+
+- name: Set LXC bind mounts
+  ansible.builtin.import_tasks: bind-mounts.yml
+  vars:
+    config: "{{ proxmox_lxc_config }}"
+    guests: "{{ proxmox_lxc_guests | selectattr('lxc.mount_volumes', 'defined') | list }}"
+
+- name: Set LXC devices
+  ansible.builtin.import_tasks: devices.yml
+  vars:
+    config: "{{ proxmox_lxc_config }}"
+    guests: "{{ proxmox_lxc_guests | selectattr('lxc.devices', 'defined') | list }}"

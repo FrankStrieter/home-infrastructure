@@ -1,0 +1,54 @@
+- name: Ensure snippets directory exists
+  ansible.builtin.file:
+    path: /var/lib/vz/snippets
+    state: directory
+    owner: 0
+    group: 0
+    mode: "0755"
+
+- name: Copy LXC hook script
+  ansible.builtin.template:
+    src: "{{ hookscript }}"
+    dest: "{{ hookscript_dest }}"
+    owner: 0
+    group: 0
+    mode: "0750"
+  loop: "{{ guests }}"
+  loop_control:
+    loop_var: guest
+    label: "{{ guest.inventory_hostname_short }} id={{ guest.lxc.id }} hookscript={{ hookscript_dest }}"
+  vars:
+    files:
+      - "{{ guest.lxc.hookscript }}"
+    paths:
+      - "templates/{{ ansible_role_name }}/{{ guest.inventory_hostname_short }}"
+      - "templates/{{ ansible_role_name }}"
+      - "{{ role_path }}/templates"
+    hookscript: "{{ lookup('ansible.builtin.first_found', paths=paths, files=files) }}"
+    hookscript_dest: "/var/lib/vz/snippets/{{ guest.lxc.id }}-{{ guest.lxc.hookscript }}"
+
+- name: Set hook script of LXC guest
+  when: current_hookscript != hookscript
+  ansible.builtin.command:
+    argv:
+      - pct
+      - set
+      - "{{ guest.lxc.id }}"
+      - --hookscript
+      - "{{ hookscript }}"
+  loop: "{{ guests }}"
+  loop_control:
+    loop_var: guest
+    label: "{{ guest.inventory_hostname_short }} id={{ guest.lxc.id }} hookscript={{ hookscript }}"
+  vars:
+    current_hookscript: >-
+      {{
+        (
+          config.proxmox_vms |
+          selectattr('id', 'equalto', 'lxc/' ~ guest.lxc.id) |
+          list |
+          first
+        ).config.hookscript | default('')
+      }}
+    hookscript: "local:snippets/{{ guest.lxc.id }}-{{ guest.lxc.hookscript }}"
+  changed_when: true

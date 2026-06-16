@@ -1,0 +1,38 @@
+- name: Add Hostname of generated lxc to router
+  block:
+    - name: Increment the retry count
+      ansible.builtin.set_fact:
+        proxmox_retry_count: "{{ 0 if proxmox_retry_count is undefined else proxmox_retry_count + 1 }}"
+
+    - name: Execute ip a
+      ansible.builtin.command: sudo /usr/bin/perl -T /usr/sbin/pct exec {{ guest.lxc.id }} ip a show dev eth0
+      register: proxmox_ip_output
+      changed_when: false
+
+    - name: Print return information from the previous task
+      ansible.builtin.debug:
+        var: proxmox_ip_output
+
+    - name: Get IP
+      ansible.builtin.set_fact:
+        proxmox_created_ip: "{{ proxmox_ip_output | regex_search('inet (\\d*\\.\\d*\\.\\d*\\.\\d*)/', '\\1') | first }}"
+
+    - name: Ensure service domain is registered on router
+      ansible.builtin.include_tasks:
+        file: router-update-dns.yml
+      vars:
+        machine_ip: "{{ proxmox_created_ip }}"
+        service_url: "{{ guest.inventory_hostname }}.{{ domain }}"
+
+  rescue:
+    - name: Max Retries reached
+      ansible.builtin.fail:
+        msg: Maximum retries of grouped tasks reached
+      when: proxmox_retry_count | default(0) >= 5
+
+    - name: Cannot get a valid IP Address, wait 10 seconds for the container to be ready
+      ansible.builtin.wait_for:
+        timeout: 10
+
+    - name: Retry
+      ansible.builtin.include_tasks: add-hostname.yml

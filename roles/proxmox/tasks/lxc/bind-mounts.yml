@@ -1,0 +1,58 @@
+- name: Set LXC bind mount
+  when: current_mount != options_string
+  ansible.builtin.command:
+    argv:
+      - pct
+      - set
+      - "{{ item.0.lxc.id | mandatory }}"
+      - "-{{ item.1.key }}"
+      - "{{ options_string }}"
+  loop: "{{ mount_guests | ansible.builtin.subelements('mount_volumes') }}"
+  loop_control:
+    label: "{{ item.0.inventory_hostname_short }} id={{ item.0.lxc.id }} {{ item.1.key }}={{ options_string }}"
+  changed_when: true
+  vars:
+    mount_guests_yaml: |
+      {% for guest in guests %}
+      - inventory_hostname_short: {{ guest.inventory_hostname_short }}
+        lxc: {{ guest.lxc }}
+        mount_volumes: {{ guest.lxc.mount_volumes | ansible.builtin.dict2items }}
+      {% endfor %}
+    mount_guests: >-
+      {{
+        mount_guests_yaml |
+        ansible.builtin.from_yaml |
+        default([], true) |
+        list
+      }}
+    current_mount: >-
+      {{
+        (
+          config.proxmox_vms |
+          selectattr('id', 'equalto', 'lxc/' ~ item.0.lxc.id) |
+          list |
+          first
+        ).config[item.1.key] | default('')
+      }}
+    options_yaml: |
+      {% for k, v in (item.1.value.options | default({})).items() %}
+      - {{ k }}={{ v }}
+      {% endfor %}
+    options_string: >-
+      {{
+        (
+          [
+            item.1.value.host_path,
+            'mp=' ~ item.1.value.mountpoint
+          ]
+          +
+          (
+            [
+              options_yaml | ansible.builtin.from_yaml
+            ] |
+            ansible.builtin.flatten |
+            sort
+          )
+        ) |
+        join(',')
+      }}

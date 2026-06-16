@@ -3,18 +3,25 @@
     name: python3-proxmoxer
     state: present
 
+- name: Initialize guest VM list
+  ansible.builtin.set_fact:
+    proxmox_kvm_guests: []
+
 - name: Build guest VM list
   ansible.builtin.set_fact:
-    kvm_guests: >-
+    proxmox_kvm_guests: >-
       {{
-        kvm_guests | default([]) +
+         proxmox_kvm_guests | default([]) +
           (
-            (hostvars[item].vm.host | default('', true) == inventory_hostname) | ternary(
+            (
+              guest_config.host | default('', true) == inventory_hostname and
+              guest_config.type | default('kvm') == 'kvm'
+            ) | ternary(
               [
                 {
                   'inventory_hostname': item,
                   'inventory_hostname_short': hostvars[item].inventory_hostname_short,
-                  'kvm': hostvars[item].vm
+                  'kvm': guest_config
                 }
               ],
               []
@@ -22,13 +29,16 @@
           )
       }}
   loop: "{{ groups['all'] | default([]) }}"
+  vars:
+    guest_config: "{{ hostvars[item].proxmox | default(hostvars[item].vm | default({})) }}"
 
 - name: Create guest VMs
-  community.general.proxmox_kvm:
+  community.proxmox.proxmox_kvm:
     api_token_id: "{{ proxmox_api_token_id | mandatory }}"
     api_token_secret: "{{ proxmox_api_token_secret | mandatory }}"
     api_user: "{{ proxmox_api_user | mandatory }}"
     api_host: localhost
+    validate_certs: false
     node: "{{ ansible_hostname | mandatory }}"
     vmid: "{{ guest.kvm.id | mandatory }}"
     name: "{{ guest.inventory_hostname_short | mandatory }}"
@@ -65,67 +75,26 @@
     # hostpci: "{{ guest.kvm.hostpci | default(omit) }}"
     ostype: l26
     watchdog: model=i6300esb,action=reset
-  loop: "{{ kvm_guests }}"
+  loop: "{{  proxmox_kvm_guests }}"
   loop_control:
     loop_var: guest
     label: "{{ guest.inventory_hostname }} id={{ guest.kvm.id }}"
   notify: Configure guest OS manually
-  register: guest_vms_created
+  register: proxmox_vm_guests_created
 
 - name: Add host PCI devices to guest
   ansible.builtin.include_tasks: create-vms-hostpci.yml
-  loop: "{{ kvm_guests }}"
+  loop: "{{  proxmox_kvm_guests }}"
   loop_control:
     loop_var: guest
     label: "{{ guest.inventory_hostname }} id={{ guest.kvm.id }}"
 
 - name: Add host USB devices to guest
   ansible.builtin.include_tasks: create-vms-usb.yml
-  loop: "{{ kvm_guests }}"
+  loop: "{{  proxmox_kvm_guests }}"
   loop_control:
     loop_var: guest
     label: "{{ guest.inventory_hostname }} id={{ guest.kvm.id }}"
-
-- name: Check if the host uses a hardware RNG
-  ansible.builtin.lineinfile:
-    path: /sys/class/misc/hw_random/rng_current
-    regexp: ^none$
-    state: absent
-  changed_when: false
-  check_mode: true
-  register: host_has_no_hwrng
-
-- name: Passthrough hardware RNG to guest
-  when: not host_has_no_hwrng.found
-  block:
-    # /bin/sh does not support pipefail option.
-    - name: Check if the guest has a RNG device configured # noqa risky-shell-pipe
-      ansible.builtin.shell:
-        cmd: >-
-          qm config {{ guest.kvm.id | quote }} | grep --quiet ^rng0:
-      loop: "{{ kvm_guests }}"
-      loop_control:
-        loop_var: guest
-        label: "{{ guest.inventory_hostname }} id={{ guest.kvm.id }}"
-      changed_when: false
-      failed_when: false
-      register: rng_configured
-
-    - name: Add RNG device to guest
-      when: rng_configured.results[index].rc != 0
-      ansible.builtin.command:
-        argv:
-          - qm
-          - set
-          - "{{ guest.kvm.id }}"
-          - -rng0
-          - source=/dev/hwrng
-      loop: "{{ kvm_guests }}"
-      loop_control:
-        loop_var: guest
-        index_var: index
-        label: "{{ guest.inventory_hostname }} id={{ guest.kvm.id }}"
-      changed_when: true
 
 - name: Install guest OS manually, if a VM was created
   ansible.builtin.meta: flush_handlers

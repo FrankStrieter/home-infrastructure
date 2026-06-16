@@ -10,10 +10,10 @@
     label: "{{ guest.inventory_hostname }} id={{ guest.kvm.id }} device={{ device }}"
   changed_when: false
   failed_when: false
-  register: devices_configured
+  register: proxmox_devices_configured
 
 - name: Add host PCI devices to guest {{ guest.inventory_hostname }}
-  when: devices_configured.results[index].rc != 0
+  when: proxmox_devices_configured.results[index].rc != 0
   ansible.builtin.command:
     argv:
       - qm

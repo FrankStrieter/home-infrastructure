@@ -1,0 +1,201 @@
+- name: Initialize LXC guest list
+  ansible.builtin.set_fact:
+    proxmox_lxc_guests: []
+
+- name: Build LXC guest list
+  ansible.builtin.set_fact:
+    proxmox_lxc_guests: >-
+      {{
+        proxmox_lxc_guests | default([]) +
+          (
+            (
+              guest_config.host | default('', true) == inventory_hostname and
+              guest_config.type | default('kvm') == 'lxc'
+            ) | ternary(
+              [
+                {
+                  'inventory_hostname': item,
+                  'inventory_hostname_short': hostvars[item].inventory_hostname_short,
+                  'lxc': guest_config
+                }
+              ],
+              []
+            )
+          )
+      }}
+  loop: "{{ groups['all'] | default([]) }}"
+  vars:
+    guest_config: "{{ hostvars[item].proxmox | default({}) }}"
+
+- name: Retrieve existing LXC guests
+  when: proxmox_lxc_guests | length > 0
+  community.proxmox.proxmox_vm_info:
+    api_token_id: "{{ proxmox_api_token_id | mandatory }}"
+    api_token_secret: "{{ proxmox_api_token_secret | mandatory }}"
+    api_user: "{{ proxmox_api_user | mandatory }}"
+    api_host: localhost
+    validate_certs: false
+    node: "{{ ansible_hostname | mandatory }}"
+    type: lxc
+    config: pending
+  register: proxmox_existing_lxcs
+
+- name: Download SSH public keys for LXC guests
+  when: >-
+    proxmox_lxc_guests |
+    selectattr('lxc.ssh_public_key_github_account', 'defined') |
+    list |
+    length > 0
+  ansible.builtin.import_tasks: lxc/ssh-public-key.yml
+  vars:
+    guests: >-
+      {{
+        proxmox_lxc_guests |
+        selectattr('lxc.ssh_public_key_github_account', 'defined') |
+        list
+      }}
+
+- name: Determine protected LXC guests
+  when: proxmox_lxc_guests | length > 0
+  ansible.builtin.set_fact:
+    proxmox_protected_lxcs: >-
+      {{
+        proxmox_existing_lxcs.proxmox_vms |
+        selectattr('config.protection', 'defined') |
+        selectattr('config.protection', 'equalto', 1) |
+        ansible.builtin.items2dict(key_name='vmid', value_name='name') |
+        ansible.builtin.dict2items
+      }}
+
+- name: Unprotect LXC guests before updating
+  when: proxmox_lxc_guests | length > 0
+  ansible.builtin.command:
+    argv:
+      - pct
+      - set
+      - "{{ item.key }}"
+      - --protection
+      - "0"
+  loop: "{{ proxmox_protected_lxcs | default([]) }}"
+  loop_control:
+    label: "{{ item.value }} id={{ item.key }}"
+  changed_when: true
+
+- name: Create or update LXC guests
+  when: proxmox_lxc_guests | length > 0
+  community.proxmox.proxmox:
+    api_token_id: "{{ proxmox_api_token_id | mandatory }}"
+    api_token_secret: "{{ proxmox_api_token_secret | mandatory }}"
+    api_user: "{{ proxmox_api_user | mandatory }}"
+    api_host: localhost
+    validate_certs: false
+    node: "{{ ansible_hostname | mandatory }}"
+    vmid: "{{ guest.lxc.id | mandatory }}"
+    hostname: "{{ guest.inventory_hostname_short | mandatory }}"
+    onboot: "{{ guest.lxc.onboot | default(true) }}"
+    startup: "{{ guest.lxc.startup | default(omit) }}"
+    state: "{{ guest.lxc.state | default(omit) }}"
+    unprivileged: "{{ guest.lxc.unprivileged | default(true) }}"
+    ostemplate: "{{ guest_is_new | ternary(guest.lxc.ostemplate | mandatory, omit) }}"
+    update: "{{ (not guest_is_new) | ternary(true, omit) }}"
+    ostype: "{{ guest.lxc.ostype | default(omit) }}"
+    disk: "{{ guest.lxc.disk | default(omit) }}"
+    disk_volume: "{{ guest.lxc.disk_volume | default(proxmox_lxc_default_disk_volume | default(omit)) }}"
+    storage: "{{ guest.lxc.storage | default(omit) }}"
+    password: "{{ guest.lxc.password | mandatory }}"
+    pubkey: "{{ lxc_pubkey }}"
+    cpus: "{{ guest.lxc.cpus | default(omit) }}"
+    cores: "{{ guest.lxc.cores | default(omit) }}"
+    memory: "{{ guest.lxc.memory | mandatory }}"
+    swap: "{{ guest.lxc.swap | default(0) }}"
+    timezone: "{{ guest.lxc.timezone | default('host') }}"
+    netif: "{{ guest.lxc.netif | default(default_netif) }}"
+    nameserver: "{{ guest.lxc.nameserver | default(omit) }}"
+    searchdomain: "{{ guest.lxc.searchdomain | default(omit) }}"
+    tags: "{{ guest.lxc.tags | default(omit) }}"
+    description: "{{ guest.lxc.description | default(omit) }}"
+  loop: "{{ proxmox_lxc_guests }}"
+  loop_control:
+    loop_var: guest
+    label: "{{ guest.inventory_hostname }} id={{ guest.lxc.id }}"
+  notify: Configure guest OS manually
+  register: proxmox_lxc_guests_created
+  vars:
+    default_netif:
+      net0: name=eth0,ip=dhcp,ip6=dhcp,bridge=vmbr0,firewall=1
+    guest_is_new: >-
+      {{
+        proxmox_existing_lxcs.proxmox_vms |
+        selectattr('vmid', 'equalto', guest.lxc.id) |
+        list |
+        length == 0
+      }}
+    lxc_pubkey: >-
+      {{
+        guest.lxc.ssh_public_key |
+        default(
+          proxmox_lxc_github_ssh_keys[guest.lxc.ssh_public_key_github_account]
+          if guest.lxc.ssh_public_key_github_account is defined
+          else omit
+        )
+      }}
+
+- name: Configure LXC guest options
+  when: proxmox_lxc_guests | length > 0
+  ansible.builtin.import_tasks: lxc/configure.yml
+
+- name: Make sure container is started
+  community.proxmox.proxmox:
+    api_token_id: "{{ proxmox_api_token_id | mandatory }}"
+    api_token_secret: "{{ proxmox_api_token_secret | mandatory }}"
+    api_user: "{{ proxmox_api_user | mandatory }}"
+    api_host: localhost
+    validate_certs: false
+    node: "{{ ansible_hostname | mandatory }}"
+    vmid: "{{ guest.lxc.id | mandatory }}"
+    state: started
+  loop: "{{ proxmox_lxc_guests }}"
+  loop_control:
+    loop_var: guest
+    label: "{{ guest.inventory_hostname }} id={{ guest.lxc.id }}"
+
+- name: Protect LXC guests
+  when: proxmox_lxc_guests | length > 0
+  ansible.builtin.command:
+    argv:
+      - pct
+      - set
+      - "{{ item.key }}"
+      - --protection
+      - "1"
+  loop: >-
+    {{
+      (proxmox_protected_lxcs | default([]) + protected_guests) |
+      ansible.builtin.unique(attribute='key')
+    }}
+  loop_control:
+    label: "{{ item.value }} id={{ item.key }}"
+  changed_when: true
+  vars:
+    protected_guests_yaml: |
+      {% for guest in proxmox_lxc_guests %}
+      - lxc: {{ guest.lxc }}
+        key: {{ guest.lxc.id }}
+        value: {{ guest.inventory_hostname_short }}
+      {% endfor %}
+    protected_guests: >-
+      {{
+        protected_guests_yaml |
+        ansible.builtin.from_yaml |
+        default([], true) |
+        selectattr('lxc.protection', 'defined') |
+        selectattr('lxc.protection', 'equalto', true) |
+        list
+      }}
+
+- name: Ensure VM domain is registered on router
+  ansible.builtin.include_tasks: add-hostname.yml
+  loop: "{{  proxmox_lxc_guests }}"
+  loop_control:
+    loop_var: guest
+    label: "{{ guest.inventory_hostname }} id={{ guest.kvm.id }}"

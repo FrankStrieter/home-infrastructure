@@ -1,0 +1,36 @@
+- name: Set LXC device
+  when: current_device != item.1.value
+  ansible.builtin.command:
+    argv:
+      - pct
+      - set
+      - "{{ item.0.lxc.id | mandatory }}"
+      - "-{{ item.1.key }}"
+      - "{{ item.1.value }}"
+  loop: "{{ device_guests | ansible.builtin.subelements('devices') }}"
+  loop_control:
+    label: "{{ item.0.inventory_hostname_short }} id={{ item.0.lxc.id }} {{ item.1.key }}={{ item.1.value }}"
+  changed_when: true
+  vars:
+    device_guests_yaml: |
+      {% for guest in guests %}
+      - inventory_hostname_short: {{ guest.inventory_hostname_short }}
+        lxc: {{ guest.lxc }}
+        devices: {{ guest.lxc.devices | ansible.builtin.dict2items }}
+      {% endfor %}
+    device_guests: >-
+      {{
+        device_guests_yaml |
+        ansible.builtin.from_yaml |
+        default([], true) |
+        list
+      }}
+    current_device: >-
+      {{
+        (
+          config.proxmox_vms |
+          selectattr('id', 'equalto', 'lxc/' ~ item.0.lxc.id) |
+          list |
+          first
+        ).config[item.1.key] | default('')
+      }}

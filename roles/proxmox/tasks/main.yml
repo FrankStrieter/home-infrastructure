@@ -1,10 +1,10 @@
 # - name: Configure IOMMU for PCI passthrough
 #   ansible.builtin.import_tasks: iommu.yml
 
-#- name: Configure DNS
+# - name: Configure DNS
 #  ansible.builtin.import_tasks: dns.yml
 
-#- name: Configure network interfaces
+# - name: Configure network interfaces
 #  ansible.builtin.import_tasks: network-interfaces.yml
 
 # - name: Configure firewall for the Proxmox host
@@ -29,3 +29,6 @@
 
 - name: Create VMs
   ansible.builtin.import_tasks: create-vms.yml
+
+- name: Create LXCs
+  ansible.builtin.import_tasks: create-lxcs.yml

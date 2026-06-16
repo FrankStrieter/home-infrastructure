@@ -103,3 +103,8 @@
         openwrt_install_recommended_packages: false
       tags:
         - init
+
+- name: BuildAgent
+  hosts: bob
+  roles:
+    

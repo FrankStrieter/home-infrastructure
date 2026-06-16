@@ -1,0 +1,25 @@
+- name: Set features of LXC guest
+  when: current_features != features
+  ansible.builtin.command:
+    argv:
+      - pct
+      - set
+      - "{{ guest.lxc.id }}"
+      - --features
+      - "{{ features }}"
+  loop: "{{ guests }}"
+  loop_control:
+    loop_var: guest
+    label: "{{ guest.inventory_hostname_short }} id={{ guest.lxc.id }} features={{ features }}"
+  vars:
+    current_features: >-
+      {{
+        (
+          config.proxmox_vms |
+          selectattr('id', 'equalto', 'lxc/' ~ guest.lxc.id) |
+          list |
+          first
+        ).config.features | default('')
+      }}
+    features: "{{ guest.lxc.features | join(',') }}"
+  changed_when: true

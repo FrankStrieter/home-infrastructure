@@ -1,0 +1,11 @@
+github_runner_access_token: "{{ vault_github_runner_access_token }}"
+
+github_runner_runners:
+  - name: home-infrastructure
+    scope: repository
+    owner: FrankStrieter
+    repository: home-infrastructure
+    labels:
+      - self-hosted
+      - linux
+      - bob

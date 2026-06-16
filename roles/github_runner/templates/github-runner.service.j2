@@ -1,0 +1,18 @@
+[Unit]
+Description=GitHub Actions Runner {{ github_runner.name }}
+After=network-online.target
+Wants=network-online.target
+OnFailure=unit-status-mail@%n.service
+
+[Service]
+User={{ github_runner_user }}
+Group={{ github_runner_group }}
+WorkingDirectory={{ github_runner_root }}/{{ github_runner.name }}
+ExecStart={{ github_runner_root }}/{{ github_runner.name }}/run.sh
+Restart=always
+RestartSec=30s
+KillSignal=SIGINT
+TimeoutStopSec=5min
+
+[Install]
+WantedBy=multi-user.target

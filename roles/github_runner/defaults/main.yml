@@ -1,0 +1,37 @@
+github_runner_root: /opt/github-runner
+github_runner_user: github-runner
+github_runner_group: "{{ github_runner_user }}"
+
+github_runner_version: 2.328.0
+github_runner_os: linux
+github_runner_architecture_map:
+  x86_64: x64
+  aarch64: arm64
+  armv7l: arm
+github_runner_architecture: >-
+  {{
+    github_runner_architecture_map[ansible_architecture] |
+    default(ansible_architecture)
+  }}
+
+github_runner_download_url: >-
+  {{
+    [
+      'https://github.com/actions/runner/releases/download/v' ~ github_runner_version,
+      'actions-runner-' ~ github_runner_os ~ '-' ~ github_runner_architecture ~ '-' ~ github_runner_version ~ '.tar.gz'
+    ] | join('/')
+  }}
+
+github_runner_api_url: https://api.github.com
+github_runner_api_version: "2022-11-28"
+
+github_runner_packages:
+  - bash
+  - ca-certificates
+  - curl
+  - git
+  - gzip
+  - tar
+  - sudo
+
+github_runner_runners: []

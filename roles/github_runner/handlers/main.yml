@@ -1,0 +1,9 @@
+- name: Restart github runner
+  ansible.builtin.systemd:
+    name: "github-runner-{{ runner.name }}.service"
+    state: restarted
+    daemon_reload: true
+  loop: "{{ github_runner_runners }}"
+  loop_control:
+    loop_var: runner
+    label: "{{ runner.name }}"

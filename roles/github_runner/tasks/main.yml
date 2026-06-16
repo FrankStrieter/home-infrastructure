@@ -1,0 +1,211 @@
+- name: Install GitHub runner dependencies
+  ansible.builtin.package:
+    name: "{{ github_runner_packages }}"
+    state: present
+
+- name: Ensure GitHub runner group exists
+  ansible.builtin.group:
+    name: "{{ github_runner_group }}"
+    system: true
+
+- name: Ensure GitHub runner user exists
+  ansible.builtin.user:
+    name: "{{ github_runner_user }}"
+    group: "{{ github_runner_group }}"
+    home: "{{ github_runner_root }}"
+    create_home: false
+    shell: /bin/bash
+    system: true
+
+- name: Ensure GitHub runner root exists
+  ansible.builtin.file:
+    path: "{{ github_runner_root }}"
+    state: directory
+    owner: "{{ github_runner_user }}"
+    group: "{{ github_runner_group }}"
+    mode: "0755"
+
+- name: Ensure GitHub runner directories exist
+  ansible.builtin.file:
+    path: "{{ github_runner_root }}/{{ runner.name }}"
+    state: directory
+    owner: "{{ github_runner_user }}"
+    group: "{{ github_runner_group }}"
+    mode: "0755"
+  loop: "{{ github_runner_runners }}"
+  loop_control:
+    loop_var: runner
+    label: "{{ runner.name }}"
+
+- name: Download GitHub runner archives
+  ansible.builtin.get_url:
+    url: "{{ runner.download_url | default(github_runner_download_url) }}"
+    dest: "{{ github_runner_root }}/{{ runner.name }}/actions-runner.tar.gz"
+    owner: "{{ github_runner_user }}"
+    group: "{{ github_runner_group }}"
+    mode: "0644"
+    checksum: "{{ runner.checksum | default(omit) }}"
+  loop: "{{ github_runner_runners }}"
+  loop_control:
+    loop_var: runner
+    label: "{{ runner.name }}"
+
+- name: Extract GitHub runner archives
+  ansible.builtin.unarchive:
+    src: "{{ github_runner_root }}/{{ runner.name }}/actions-runner.tar.gz"
+    dest: "{{ github_runner_root }}/{{ runner.name }}"
+    remote_src: true
+    owner: "{{ github_runner_user }}"
+    group: "{{ github_runner_group }}"
+    creates: "{{ github_runner_root }}/{{ runner.name }}/config.sh"
+  loop: "{{ github_runner_runners }}"
+  loop_control:
+    loop_var: runner
+    label: "{{ runner.name }}"
+
+- name: Install GitHub runner native dependencies
+  ansible.builtin.command:
+    argv:
+      - ./bin/installdependencies.sh
+    chdir: "{{ github_runner_root }}/{{ runner.name }}"
+  loop: "{{ github_runner_runners }}"
+  loop_control:
+    loop_var: runner
+    label: "{{ runner.name }}"
+  changed_when: false
+
+- name: Check configured GitHub runners
+  ansible.builtin.stat:
+    path: "{{ github_runner_root }}/{{ runner.name }}/.runner"
+  loop: "{{ github_runner_runners }}"
+  loop_control:
+    loop_var: runner
+    label: "{{ runner.name }}"
+  register: github_runner_configured
+
+- name: Request GitHub runner registration tokens
+  ansible.builtin.uri:
+    url: "{{ github_runner_registration_url }}"
+    method: POST
+    headers:
+      Accept: application/vnd.github+json
+      Authorization: "Bearer {{ github_runner_access_token | mandatory }}"
+      X-GitHub-Api-Version: "{{ github_runner_api_version }}"
+    status_code: 201
+  vars:
+    github_runner_registration_url: >-
+      {{
+        github_runner_api_url ~ '/' ~
+        (
+          'orgs/' ~ runner.owner ~ '/actions/runners/registration-token'
+          if runner.scope | default('repository') == 'organization'
+          else 'repos/' ~ runner.owner ~ '/' ~
+               (runner.repository | mandatory) ~
+               '/actions/runners/registration-token'
+        )
+      }}
+  loop: "{{ github_runner_runners }}"
+  loop_control:
+    loop_var: runner
+    label: "{{ runner.name }}"
+    extended: true
+  when: not github_runner_configured.results[ansible_loop.index0].stat.exists
+  register: github_runner_registration_tokens
+  no_log: true
+
+- name: Configure GitHub runners
+  ansible.builtin.command:
+    argv: "{{ github_runner_config_command }}"
+    chdir: "{{ github_runner_root }}/{{ runner_token.runner.name }}"
+  become: true
+  become_user: "{{ github_runner_user }}"
+  changed_when: true
+  vars:
+    github_runner_url: >-
+      {{
+        'https://github.com/' ~ runner_token.runner.owner ~
+        (
+          ''
+          if runner_token.runner.scope | default('repository') == 'organization'
+          else '/' ~ (runner_token.runner.repository | mandatory)
+        )
+      }}
+    github_runner_config_command_base:
+      - ./config.sh
+      - --unattended
+      - --replace
+      - --url
+      - "{{ github_runner_url }}"
+      - --token
+      - "{{ runner_token.json.token }}"
+      - --name
+      - "{{ runner_token.runner.runner_name | default(runner_token.runner.name) }}"
+      - --work
+      - "{{ runner_token.runner.work_dir | default('_work') }}"
+    github_runner_config_labels: >-
+      {{
+        ['--labels', runner_token.runner.labels | join(',')]
+        if runner_token.runner.labels is defined
+        else []
+      }}
+    github_runner_config_group: >-
+      {{
+        ['--runnergroup', runner_token.runner.runner_group]
+        if runner_token.runner.runner_group is defined
+        else []
+      }}
+    github_runner_config_ephemeral: >-
+      {{
+        ['--ephemeral']
+        if runner_token.runner.ephemeral | default(false)
+        else []
+      }}
+    github_runner_config_disable_update: >-
+      {{
+        ['--disableupdate']
+        if runner_token.runner.disable_update | default(false)
+        else []
+      }}
+    github_runner_config_command: >-
+      {{
+        github_runner_config_command_base
+        + github_runner_config_labels
+        + github_runner_config_group
+        + github_runner_config_ephemeral
+        + github_runner_config_disable_update
+      }}
+  loop: >-
+    {{
+      github_runner_registration_tokens.results |
+      default([]) |
+      rejectattr('skipped', 'defined')
+    }}
+  loop_control:
+    loop_var: runner_token
+    label: "{{ runner_token.runner.name }}"
+
+- name: Install GitHub runner systemd units
+  ansible.builtin.template:
+    src: github-runner.service.j2
+    dest: "/etc/systemd/system/github-runner-{{ runner.name }}.service"
+    owner: 0
+    group: 0
+    mode: "0644"
+  vars:
+    github_runner: "{{ runner }}"
+  loop: "{{ github_runner_runners }}"
+  loop_control:
+    loop_var: runner
+    label: "{{ runner.name }}"
+  notify: Restart github runner
+
+- name: Start GitHub runner services
+  ansible.builtin.systemd:
+    name: "github-runner-{{ runner.name }}.service"
+    state: started
+    enabled: true
+    daemon_reload: true
+  loop: "{{ github_runner_runners }}"
+  loop_control:
+    loop_var: runner
+    label: "{{ runner.name }}"

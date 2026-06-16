@@ -104,7 +104,25 @@
       tags:
         - init
 
-- name: BuildAgent
+- name: Baumeister
   hosts: bob
+  become: true
   roles:
-    
+    - role: hifis.toolkit.unattended_upgrades
+      when: ansible_os_family == 'Debian'
+      vars:
+        # Install security updates at 3:00 + up to 30min, reboot immeditately if
+        # required.
+        unattended_systemd_timer_override: true
+        unattended_apt_daily_upgrade_oncalendar: '*-*-* 3:00'
+        unattended_apt_daily_upgrade_randomizeddelaysec: 30m
+        unattended_automatic_reboot: true
+      tags:
+        - updates
+        - unattended_upgrades
+        - apt
+    - role: github_runner
+      tags:
+        - github-runner
+        - runner
+        - actions

@@ -1,0 +1,95 @@
+name: Run Ansible
+
+on:
+  workflow_call:
+    inputs:
+      tags:
+        description: Tags to apply (comma-separated)
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      tags:
+        description: Tags to apply (comma-separated)
+        required: true
+        type: string
+
+jobs:
+  ansible:
+    name: Deploy affected roles
+
+    runs-on:
+      - self-hosted
+
+    container:
+      image: ghcr.io/agross/ansible-ee:2.20.6-1
+      # --tty for unbuffered output.
+      options: --tty
+
+    defaults:
+      run:
+        # The container image provides bash.
+        shell: bash
+
+    steps:
+      - name: Get latest code
+        uses: actions/checkout@v6
+
+      - name: Save SSH keyfile
+        run: |
+          printf '%s' "$SSH_PRIVATE_KEY" > .ansible-ssh-private-key
+          chmod 600 .ansible-ssh-private-key
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Save ansible vault password for vault ID "agross2"
+        run: |
+          printf '%s' "$ANSIBLE_VAULT_FST" > .ansible-vault-fst
+          chmod 600 .ansible-vault-fst
+        env:
+          ANSIBLE_VAULT_FST: ${{ secrets.ANSIBLE_VAULT_FST }}
+
+      - uses: actions/cache@v5
+        with:
+          path: ~/.ansible
+          # Look to see if there is a cache hit for the corresponding
+          # requirements file.
+          key: ${{ runner.os }}-ansible-galaxy-${{ hashFiles('**/requirements*.yml') }}
+
+      - name: Install Ansible dependencies
+        # ansible-galaxy role install does not install updates unless `--force`d.
+        run: |
+          ansible-galaxy role \
+                         install \
+                         --role-file requirements.yml \
+                         --force
+
+          ansible-galaxy collection \
+                         install \
+                         --requirements-file requirements.yml
+
+        env:
+          ANSIBLE_HOST_KEY_CHECKING: False
+          ANSIBLE_FORCE_COLOR: True
+        # Because some hosts might not be reachable.
+        continue-on-error: true
+
+      - name: Run Ansible
+        run: |
+          ansible-playbook install.yml \
+                           --tags "$TAGS" \
+                           --vault-id fst@.ansible-vault-fst \
+                           --user deploy \
+                           --key-file .ansible-ssh-private-key
+        env:
+          ANSIBLE_HOST_KEY_CHECKING: False
+          ANSIBLE_FORCE_COLOR: True
+          TAGS: ${{ inputs.tags }}
+
+      - name: Clean up secrets
+        if: always()
+        run: |
+          rm .ansible-ssh-private-key \
+             .ansible-vault-fst
+        # Because files might not exist.
+        continue-on-error: true

@@ -14,7 +14,7 @@ db() {
      {{ vaultwarden_root | ansible.builtin.quote }}/app/db.sqlite3-wal
 
   # renovate: docker=alpine/sqlite
-  local sqlite_version=3.53.2
+  local sqlite_version=3.51.2
 
   docker container \
          run \

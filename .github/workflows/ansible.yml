@@ -56,6 +56,9 @@ jobs:
           # requirements file.
           key: ${{ runner.os }}-ansible-galaxy-${{ hashFiles('**/requirements*.yml') }}
 
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v4
+
       - name: Install Ansible dependencies
         # ansible-galaxy role install does not install updates unless `--force`d.
         run: |

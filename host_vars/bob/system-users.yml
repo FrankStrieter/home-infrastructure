@@ -1,0 +1,19 @@
+system_users:
+  fst:
+    name: Frank Strieter
+    shell: /bin/bash
+    groups:
+      - docker
+      - "{{ passwordless_sudo_group }}"
+      - sudo
+      - adm
+    github: FrankStrieter
+  deploy:
+    name: Deploy
+    shell: /bin/bash
+    groups:
+      - docker
+      - "{{ passwordless_sudo_group }}"
+      - sudo
+      - adm
+    public_key: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJEeHTKbyy6pLLIoI3ZL9IR0r7tGT0ZC9H18mOdSlhWG deploy@strieter.dev

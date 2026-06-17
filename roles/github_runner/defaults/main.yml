@@ -1,5 +1,5 @@
 github_runner_root: /opt/github-runner
-github_runner_user: github-runner
+github_runner_user: deploy
 github_runner_group: "{{ github_runner_user }}"
 
 github_runner_version: 2.328.0

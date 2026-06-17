@@ -3,20 +3,6 @@
     name: "{{ github_runner_packages }}"
     state: present
 
-- name: Ensure GitHub runner group exists
-  ansible.builtin.group:
-    name: "{{ github_runner_group }}"
-    system: true
-
-- name: Ensure GitHub runner user exists
-  ansible.builtin.user:
-    name: "{{ github_runner_user }}"
-    group: "{{ github_runner_group }}"
-    home: "{{ github_runner_root }}"
-    create_home: false
-    shell: /bin/bash
-    system: true
-
 - name: Ensure GitHub runner root exists
   ansible.builtin.file:
     path: "{{ github_runner_root }}"

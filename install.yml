@@ -114,6 +114,13 @@
         - updates
         - unattended_upgrades
         - apt
+    - role: system-users
+      tags:
+        - users
+        - system-users
+    - role: docker
+      tags:
+        - docker
     - role: github_runner
       tags:
         - github-runner

@@ -1,3 +1,6 @@
+- name: Import Router initialization playbook
+  ansible.builtin.import_playbook: _router.yml
+
 - name: Deploy services on home_server
   hosts: home
   become: true
@@ -93,16 +96,6 @@
       tags:
         - borg-pool
         - storage
-
-- name: Routers
-  hosts: router
-  gather_facts: false
-  roles:
-    - role: community.openwrt.init
-      vars:
-        openwrt_install_recommended_packages: false
-      tags:
-        - init
 
 - name: Baumeister
   hosts: bob

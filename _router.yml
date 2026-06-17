@@ -1,0 +1,15 @@
+- name: Routers
+  hosts: router
+  gather_facts: false
+  roles:
+    - role: community.openwrt.init
+      vars:
+        openwrt_install_recommended_packages: false
+      tags:
+        - init
+
+  handlers:
+    - name: Reload dnsmasq
+      community.openwrt.service:
+        name: dnsmasq
+        state: restarted

@@ -9,4 +9,4 @@
     find:
       name: "{{ service_url }}"
       ip: "{{ machine_ip }}"
-  register: domain_exists
+  notify: Reload dnsmasq

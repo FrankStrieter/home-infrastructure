@@ -183,6 +183,7 @@
   loop_control:
     loop_var: runner_token
     label: "{{ runner_token.runner.name }}"
+  no_log: true
 
 - name: Install GitHub runner systemd units
   ansible.builtin.template:

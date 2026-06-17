@@ -89,6 +89,7 @@
     api_user: "{{ proxmox_api_user | mandatory }}"
     api_host: localhost
     validate_certs: false
+    cmode: tty
     node: "{{ ansible_hostname | mandatory }}"
     vmid: "{{ guest.lxc.id | mandatory }}"
     hostname: "{{ guest.inventory_hostname_short | mandatory }}"
@@ -120,6 +121,7 @@
     label: "{{ guest.inventory_hostname }} id={{ guest.lxc.id }}"
   notify: Configure guest OS manually
   register: proxmox_lxc_guests_created
+  no_log: true
   vars:
     default_netif:
       net0: name=eth0,ip=dhcp,ip6=dhcp,bridge=vmbr0,firewall=1

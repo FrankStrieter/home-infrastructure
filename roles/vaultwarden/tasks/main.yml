@@ -4,6 +4,7 @@
   community.general.terraform:
     project_path: 'roles/vaultwarden/cloudflare-tunnel'
     state: present
+    force_init: true
     variables:
       cloudflare_email: "{{ cloudflare_email }}"
       cloudflare_account_id: "{{ cloudflare_account_id }}"

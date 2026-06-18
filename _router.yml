@@ -5,6 +5,7 @@
     - role: community.openwrt.init
       vars:
         openwrt_install_recommended_packages: false
+        openwrt_ssh_user: root
       tags:
         - init
 
@@ -13,5 +14,3 @@
       community.openwrt.service:
         name: dnsmasq
         state: restarted
-      vars:
-        ansible_ssh_user: root

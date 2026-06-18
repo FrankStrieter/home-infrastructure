@@ -10,5 +10,3 @@
       name: "{{ service_url }}"
       ip: "{{ machine_ip }}"
   notify: Reload dnsmasq
-  vars:
-    ansible_ssh_user: root

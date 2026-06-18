@@ -80,6 +80,7 @@ jobs:
       - name: Run Ansible
         run: |
           ansible-playbook install.yml \
+                           -v \
                            --tags "$TAGS" \
                            --vault-id fst@.ansible-vault-fst \
                            --user deploy \

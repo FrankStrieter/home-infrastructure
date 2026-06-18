@@ -42,7 +42,7 @@ jobs:
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      - name: Save ansible vault password for vault ID "agross2"
+      - name: Save ansible vault password for vault ID "fst"
         run: |
           printf '%s' "$ANSIBLE_VAULT_FST" > .ansible-vault-fst
           chmod 600 .ansible-vault-fst
@@ -90,7 +90,7 @@ jobs:
           TAGS: ${{ inputs.tags }}
 
       - name: Clean up secrets
-        if: always()
+        # if: always()
         run: |
           rm .ansible-ssh-private-key \
              .ansible-vault-fst

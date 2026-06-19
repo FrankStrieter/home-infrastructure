@@ -21,7 +21,7 @@ services:
       - traefik.http.routers.${COMPOSE_PROJECT_NAME}-app.middlewares=security-headers@file,traefik-real-ip@file
 
   tunnel:
-    image: cloudflare/cloudflared:2026.6.0  
+    image: cloudflare/cloudflared:2026.6.1  
     command: -metrics 0.0.0.0:20241 tunnel run
     environment:
       - TUNNEL_TOKEN={{ vaultwarden_terraform.outputs.tunnel_token.value.token }}

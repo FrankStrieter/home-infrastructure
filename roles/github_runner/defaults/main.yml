@@ -31,7 +31,10 @@ github_runner_packages:
   - curl
   - git
   - gzip
+  - unzip
   - tar
+  - ansible
+  - terraform
   - sudo
 
 github_runner_runners: []

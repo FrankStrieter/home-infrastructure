@@ -34,11 +34,6 @@ jobs:
     steps:
       - name: Get latest code
         uses: actions/checkout@v6
-      
-      - name: Install ansible
-        run: |
-          sudo apt install --yes ansible python3-passlib &&
-          ansible --version
 
       - name: Save SSH keyfile
         run: |
@@ -60,9 +55,6 @@ jobs:
           # Look to see if there is a cache hit for the corresponding
           # requirements file.
           key: ${{ runner.os }}-ansible-galaxy-${{ hashFiles('**/requirements*.yml') }}
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v4
 
       - name: Install Ansible dependencies
         # ansible-galaxy role install does not install updates unless `--force`d.

@@ -6,6 +6,7 @@
       vars:
         openwrt_install_recommended_packages: false
         openwrt_ssh_user: root
+        ansible_user: root
       tags:
         - init
 

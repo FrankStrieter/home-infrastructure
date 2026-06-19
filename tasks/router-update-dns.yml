@@ -9,4 +9,6 @@
     find:
       name: "{{ service_url }}"
       ip: "{{ machine_ip }}"
+    vars:
+      ansible_user: root
   notify: Reload dnsmasq

@@ -34,7 +34,6 @@ github_runner_packages:
   - unzip
   - tar
   - ansible
-  - terraform
   - sudo
 
 github_runner_runners: []

@@ -121,6 +121,11 @@
     - role: docker
       tags:
         - docker
+    - role: node-exporter
+      tags:
+        - otel
+        - observability
+        - node-exporter
     - role: github_runner
       tags:
         - github-runner

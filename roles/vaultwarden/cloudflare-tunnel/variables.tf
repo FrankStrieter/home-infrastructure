@@ -16,17 +16,6 @@ variable "cloudflare_token" {
   sensitive   = true
 }
 
-variable "cloudflare_r2_access_key" {
-  description = "Cloudflare R2 Access Key"
-  type        = string
-  sensitive   = true
-}
-variable "cloudflare_r2_access_secret" {
-  description = "Cloudflare R2 Access Secret"
-  type        = string
-  sensitive   = true
-}
-
 variable "cloudflare_zone_id" {
   description = "foo"
   type = string

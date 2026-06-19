@@ -11,12 +11,10 @@
       cloudflare_token: "{{ cloudflare_token }}"
       cloudflare_zone_id: "{{ cloudflare_zone_id }}"
       domain: "{{ renovate_domain }}"
-      backend_config:
-        access_key: "{{ cloudflare_r2_access_key }}"
-        secret_key: "{{ cloudflare_r2_access_secret }}"
-        key: "{{ ansible_role_name }}/terraform.tfstate"
-        endpoints:
-          s3: "https://{{ cloudflare_account_id }}.r2.cloudflarestorage.com"
+    backend_config:
+      access_key: "{{ cloudflare_r2_access_key }}"
+      secret_key: "{{ cloudflare_r2_access_secret }}"
+      key: "renovate/terraform.tfstate"
   register: renovate_terraform
 
 - name: Copy templates

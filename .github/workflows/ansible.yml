@@ -80,7 +80,6 @@ jobs:
                            -v \
                            --tags "$TAGS" \
                            --vault-id fst@.ansible-vault-fst \
-                           --user deploy \
                            --key-file .ansible-ssh-private-key
         env:
           ANSIBLE_HOST_KEY_CHECKING: False

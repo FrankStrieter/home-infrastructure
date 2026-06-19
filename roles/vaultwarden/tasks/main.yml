@@ -11,10 +11,10 @@
       cloudflare_token: "{{ cloudflare_token }}"
       cloudflare_zone_id: "{{ cloudflare_zone_id }}"
       domain: "{{ vaultwarden_domain }}"
-      backend_config:
-        access_key: "{{ cloudflare_r2_access_key }}"
-        secret_key: "{{ cloudflare_r2_access_secret }}"
-        key: "{{ ansible_role_name }}/terraform.tfstate"
+    backend_config:
+      access_key: "{{ cloudflare_r2_access_key }}"
+      secret_key: "{{ cloudflare_r2_access_secret }}"
+      key: "{{ ansible_role_name }}/terraform.tfstate"
   register: vaultwarden_terraform
 
 - name: Copy templates

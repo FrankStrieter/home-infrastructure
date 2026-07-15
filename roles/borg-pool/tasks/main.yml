@@ -24,4 +24,5 @@
     path: "{{ borg_pool_home }}/.ssh/authorized_keys"
     owner: "{{ borg_pool_user }}"
     group: "{{ borg_pool_group }}"
-    mode: 0600 state=file
+    mode: "0600"
+    state: file

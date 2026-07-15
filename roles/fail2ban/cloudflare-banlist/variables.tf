@@ -11,6 +11,6 @@ variable "cloudflare_token" {
 }
 
 variable "cloudflare_zone_id" {
-  description = "foo"
+  description = "Zone Id"
   type = string
 }

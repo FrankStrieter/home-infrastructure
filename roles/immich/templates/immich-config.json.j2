@@ -1,0 +1,278 @@
+{
+  "backup": {
+    "database": {
+      "cronExpression": "0 02 * * *",
+      "enabled": false,
+      "keepLastAmount": 14
+    }
+  },
+  "ffmpeg": {
+    "accel": "disabled",
+    "accelDecode": false,
+    "acceptedAudioCodecs": [
+      "aac",
+      "mp3",
+      "opus"
+    ],
+    "acceptedContainers": [
+      "mov",
+      "ogg",
+      "webm"
+    ],
+    "acceptedVideoCodecs": [
+      "h264"
+    ],
+    "bframes": -1,
+    "cqMode": "auto",
+    "crf": 23,
+    "gopSize": 0,
+    "maxBitrate": "12000k",
+    "preferredHwDevice": "auto",
+    "preset": "medium",
+    "realtime": {
+      "enabled": false,
+      "resolutions": [
+        480,
+        720,
+        1080
+      ],
+      "videoCodecs": [
+        "h264",
+        "hevc"
+      ]
+    },
+    "refs": 0,
+    "targetAudioCodec": "aac",
+    "targetResolution": "original",
+    "targetVideoCodec": "h264",
+    "temporalAQ": false,
+    "threads": 8,
+    "tonemap": "hable",
+    "transcode": "bitrate",
+    "twoPass": true
+  },
+  "image": {
+    "colorspace": "p3",
+    "extractEmbedded": false,
+    "fullsize": {
+      "enabled": false,
+      "format": "jpeg",
+      "progressive": true,
+      "quality": 80
+    },
+    "preview": {
+      "format": "webp",
+      "progressive": false,
+      "quality": 80,
+      "size": 2160
+    },
+    "thumbnail": {
+      "format": "webp",
+      "progressive": false,
+      "quality": 80,
+      "size": 480
+    }
+  },
+  "integrityChecks": {
+    "checksumFiles": {
+      "cronExpression": "0 03 * * *",
+      "enabled": true,
+      "percentageLimit": 0.01,
+      "timeLimit": {{ '30m' | community.general.to_milliseconds }}
+    },
+    "missingFiles": {
+      "cronExpression": "0 03 * * *",
+      "enabled": true
+    },
+    "untrackedFiles": {
+      "cronExpression": "0 03 * * *",
+      "enabled": true
+    }
+  },
+  "job": {
+    "backgroundTask": {
+      "concurrency": 5
+    },
+    "editor": {
+      "concurrency": 2
+    },
+    "faceDetection": {
+      "concurrency": 2
+    },
+    "integrityCheck": {
+      "concurrency": 1
+    },
+    "library": {
+      "concurrency": 5
+    },
+    "metadataExtraction": {
+      "concurrency": 5
+    },
+    "migration": {
+      "concurrency": 5
+    },
+    "notifications": {
+      "concurrency": 5
+    },
+    "ocr": {
+      "concurrency": 5
+    },
+    "search": {
+      "concurrency": 5
+    },
+    "sidecar": {
+      "concurrency": 5
+    },
+    "smartSearch": {
+      "concurrency": 6
+    },
+    "thumbnailGeneration": {
+      "concurrency": 7
+    },
+    "videoConversion": {
+      "concurrency": 1
+    },
+    "workflow": {
+      "concurrency": 5
+    }
+  },
+  "library": {
+    "scan": {
+      "cronExpression": "0 0 * * *",
+      "enabled": true
+    },
+    "watch": {
+      "enabled": false
+    }
+  },
+  "logging": {
+    "enabled": true,
+    "level": "log"
+  },
+  "machineLearning": {
+    "availabilityChecks": {
+      "enabled": true,
+      "interval": 30000,
+      "timeout": 2000
+    },
+    "clip": {
+      "enabled": true,
+      "modelName": "ViT-SO400M-14-SigLIP2-378__webli"
+    },
+    "duplicateDetection": {
+      "enabled": true,
+      "maxDistance": 0.0155
+    },
+    "enabled": true,
+    "facialRecognition": {
+      "enabled": true,
+      "maxDistance": 0.6,
+      "minFaces": 1,
+      "minScore": 0.7,
+      "modelName": "buffalo_l"
+    },
+    "ocr": {
+      "enabled": true,
+      "maxResolution": 736,
+      "minDetectionScore": 0.5,
+      "minRecognitionScore": 0.8,
+      "modelName": "EN__PP-OCRv5_mobile"
+    },
+    "urls": [
+      "http://machine-learning:3003"
+    ]
+  },
+  "map": {
+    "darkStyle": "https://tiles.immich.cloud/v1/style/dark.json",
+    "enabled": true,
+    "lightStyle": "https://tiles.immich.cloud/v1/style/light.json"
+  },
+  "metadata": {
+    "faces": {
+      "import": true
+    }
+  },
+  "newVersionCheck": {
+    "channel": "stable",
+    "enabled": true
+  },
+  "nightlyTasks": {
+    "clusterNewFaces": true,
+    "databaseCleanup": true,
+    "generateMemories": true,
+    "missingThumbnails": true,
+    "startTime": "00:00",
+    "syncQuotaUsage": true
+  },
+  "notifications": {
+    "smtp": {
+      "enabled": true,
+      "from": "Immich <{{ immich_smtp_user }}>",
+      "replyTo": "{{ immich_smtp_user }}",
+      "transport": {
+        "host": "smtp.gmail.com",
+        "ignoreCert": false,
+        "password": {{ immich_smtp_password | ansible.builtin.mandatory | ansible.builtin.to_json }},
+        "port": 587,
+        "secure": false,
+        "username": {{ immich_smtp_user | ansible.builtin.mandatory | ansible.builtin.to_json }}
+      }
+    }
+  },
+  "oauth": {
+    "allowInsecureRequests": false,
+    "autoLaunch": false,
+    "autoRegister": false,
+    "buttonText": "Login with OAuth",
+    "clientId": "",
+    "clientSecret": "",
+    "defaultStorageQuota": 0,
+    "enabled": false,
+    "endSessionEndpoint": "",
+    "issuerUrl": "",
+    "mobileOverrideEnabled": false,
+    "mobileRedirectUri": "",
+    "profileSigningAlgorithm": "none",
+    "prompt": "",
+    "roleClaim": "immich_role",
+    "scope": "openid email profile",
+    "signingAlgorithm": "RS256",
+    "storageLabelClaim": "preferred_username",
+    "storageQuotaClaim": "immich_quota",
+    "timeout": 30000,
+    "tokenEndpointAuthMethod": "client_secret_post"
+  },
+  "passwordLogin": {
+    "enabled": true
+  },
+  "reverseGeocoding": {
+    "enabled": true
+  },
+  "server": {
+    "externalDomain": "https://{{ immich_domain | ansible.builtin.mandatory }}",
+    "loginPageMessage": "",
+    "publicUsers": true
+  },
+  "storageTemplate": {
+    "enabled": true,
+    "hashVerificationEnabled": true,
+    "template": "{% raw %}{{album}}/{{y}}/{{MM}}/{{dd}}/{{filename}}{% endraw %}"
+  },
+  "templates": {
+    "email": {
+      "albumInviteTemplate": "",
+      "albumUpdateTemplate": "",
+      "welcomeTemplate": ""
+    }
+  },
+  "theme": {
+    "customCss": ""
+  },
+  "trash": {
+    "days": 30,
+    "enabled": true
+  },
+  "user": {
+    "deleteDelay": 7
+  }
+}

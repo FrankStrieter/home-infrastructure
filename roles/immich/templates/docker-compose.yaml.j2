@@ -1,0 +1,82 @@
+networks:
+  web:
+    external: true
+
+services:
+  server:
+    image: ghcr.io/immich-app/immich-server:v3.1.0
+    restart: unless-stopped
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - {{ immich_media_mount_path }}:/data
+      - ./immich-config.json:/immich-config.json:ro
+    env_file:
+      - .env
+    networks:
+      - default
+      - web
+    depends_on:
+      redis:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}-app.rule=Host(`{{ immich_domain | ansible.builtin.mandatory }}`)
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}-app.entrypoints=https
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}-app.middlewares=security-headers@file,traefik-real-ip@file
+      - traefik.http.services.${COMPOSE_PROJECT_NAME}-app.loadbalancer.server.port=2283
+
+  machine-learning:
+    image: ghcr.io/immich-app/immich-machine-learning:v3.1.0
+    restart: unless-stopped
+    volumes:
+      - ./cache/ml-model:/cache
+    env_file:
+      - .env
+
+  redis:
+    image: redis:8.10.0-alpine
+    restart: unless-stopped
+    volumes:
+      - ./redis:/data
+    healthcheck:
+      test: redis-cli ping | grep -xq PONG
+      start_period: 5s
+      interval: 5s
+
+  db:
+    image: ghcr.io/immich-app/postgres:18-vectorchord0.5.3
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      POSTGRES_DB: ${DB_DATABASE_NAME}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_INITDB_ARGS: --data-checksums
+      DB_STORAGE_TYPE: {{ immich_database_storage_type }}
+      PGUSER: ${DB_USERNAME}
+      PGPASSWORD: ${DB_PASSWORD}
+      PGDATABASE: ${DB_DATABASE_NAME}
+    volumes:
+      - ./db:/var/lib/postgresql
+    shm_size: 128mb
+    healthcheck:
+      test:
+        - CMD
+        - psql
+        - --command=select 1
+      interval: 5s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+  tunnel:
+    image: cloudflare/cloudflared:2026.6.1
+    command: tunnel run
+    restart: unless-stopped
+    environment:
+      TUNNEL_TOKEN: {{ immich_terraform.outputs.tunnel_token.value.token }}
+    networks:
+      - web

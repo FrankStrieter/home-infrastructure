@@ -1,0 +1,36 @@
+<<: !include /etc/borgmatic/config.yaml
+
+constants:
+  name: {{ ansible_role_name }}
+  unit: immich.service
+
+source_directories: !retain
+  - {{ immich_root }}/backups
+
+numeric_ids: true
+birthtime: true
+
+commands:
+  - before: configuration
+    when:
+      - create
+    run:
+      - {{ immich_root }}/backup
+
+  - before: action
+    when:
+      - extract
+    run:
+      - |
+        if systemctl is-active --quiet {unit}; then
+          systemctl stop {unit}
+        fi
+
+  - after: action
+    when:
+      - extract
+    states:
+      - finish
+    run:
+      - {{ immich_root }}/restore
+      - systemctl start {unit}

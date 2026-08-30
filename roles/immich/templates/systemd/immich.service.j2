@@ -1,0 +1,21 @@
+[Unit]
+Description=Immich
+BindsTo=docker.service
+Requires={{ immich_media_mount_unit }}
+After=docker.service {{ immich_media_mount_unit }}
+RequiresMountsFor={{ immich_media_mount_path }}
+OnFailure=unit-status-mail@%n.service
+
+[Service]
+WorkingDirectory={{ immich_root }}
+
+ExecStartPre=/usr/bin/docker compose config
+ExecStart=/usr/bin/docker compose up
+ExecStop=/usr/bin/docker compose stop
+ExecReload=/usr/bin/docker compose up --detach
+
+SuccessExitStatus=130
+
+[Install]
+WantedBy=multi-user.target
+

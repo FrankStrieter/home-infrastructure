@@ -3,7 +3,7 @@ proxmox:
   type: kvm
   id: 101
   cores: 4
-  memory: 2048
+  memory: 6144
   net:
     net0: "virtio,bridge=vmbr0,firewall=1"
   scsi:

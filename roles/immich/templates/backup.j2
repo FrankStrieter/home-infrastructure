@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# vim: set ft=jinja-shell ts=2 sw=2 et:
+
+set -euo pipefail
+
+cd -- {{ immich_root | ansible.builtin.quote }}
+
+target={{ immich_root | ansible.builtin.quote }}/backups
+
+mkdir --parents -- "$target"
+find "$target" -mindepth 1 -maxdepth 1 -delete
+
+docker compose exec \
+               --no-TTY \
+               db \
+               pg_dumpall \
+               --clean \
+               --if-exists \
+               --quote-all-identifiers \
+  > "$target/db.sql"

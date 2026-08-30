@@ -1,0 +1,11 @@
+endpoints:
+  - name: Immich
+    group: Infrastructure
+    url: https://{{ immich_domain }}/api/server/ping
+    interval: 1m
+    conditions:
+      - "[STATUS] == 200"
+    headers:
+      Cf-Connecting-Ip: 192.168.1.1
+    alerts:
+      - type: telegram

@@ -1,0 +1,7 @@
+immich_root: "/data/{{ ansible_role_name }}"
+immich_media_mount_path: /mnt/immich
+immich_media_mount_unit: mnt-immich.mount
+immich_smb_share: //datengrab.strieter.dev/immich
+immich_uid: 0
+immich_gid: 0
+immich_database_storage_type: SSD

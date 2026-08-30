@@ -1,0 +1,16 @@
+[Unit]
+Description=Immich media share
+Wants=network-online.target
+After=network-online.target
+Before=immich.service
+
+[Mount]
+What={{ immich_smb_share | ansible.builtin.mandatory }}
+Where={{ immich_media_mount_path | ansible.builtin.mandatory }}
+Type=cifs
+Options=credentials={{ immich_root }}/.smb-credentials,vers=3.1.1,iocharset=utf8,noserverino,_netdev,uid={{ immich_uid }},gid={{ immich_gid }},file_mode=0660,dir_mode=0770
+TimeoutSec=30
+
+[Install]
+WantedBy=multi-user.target
+

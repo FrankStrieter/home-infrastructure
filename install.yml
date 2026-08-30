@@ -62,6 +62,10 @@
       tags:
         - renovate
         - dependabot
+    - role: immich
+      tags:
+        - immich
+        - photos
 
 - name: Deploy services for backup
   hosts: backup
@@ -97,7 +101,7 @@
         - borg-pool
         - storage
 
-- name: Baumeister
+- name: Deploy build server
   hosts: bob
   become: true
   roles:

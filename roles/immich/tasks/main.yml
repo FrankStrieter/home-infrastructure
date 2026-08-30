@@ -1,0 +1,215 @@
+- name: Validate required Immich configuration
+  ansible.builtin.assert:
+    that:
+      - immich_domain | default('', true) | length > 0
+      - immich_database_password | default('', true) | length > 0
+      - immich_smb_username | default('', true) | length > 0
+      - immich_smb_password | default('', true) | length > 0
+      - immich_smtp_user | default('', true) | length > 0
+      - immich_smtp_password | default('', true) | length > 0
+      - immich_database_storage_type in ['SSD', 'HDD']
+    fail_msg: Fill all Immich values in host_vars/home/immich.vault.yml before deployment.
+
+- name: Set up Cloudflare tunnel
+  delegate_to: localhost
+  become: false
+  community.general.terraform:
+    project_path: roles/immich/cloudflare-tunnel
+    state: present
+    force_init: true
+    variables:
+      cloudflare_account_id: "{{ cloudflare_account_id }}"
+      cloudflare_token: "{{ cloudflare_token }}"
+      cloudflare_zone_id: "{{ cloudflare_zone_id }}"
+      domain: "{{ immich_domain }}"
+    backend_config:
+      access_key: "{{ cloudflare_r2_access_key }}"
+      secret_key: "{{ cloudflare_r2_access_secret }}"
+      key: "{{ ansible_role_name }}/terraform.tfstate"
+  register: immich_terraform
+
+- name: Install SMB client utilities
+  ansible.builtin.apt:
+    name: cifs-utils
+    state: present
+    update_cache: true
+
+- name: Create Immich media mount point
+  ansible.builtin.file:
+    path: "{{ immich_media_mount_path }}"
+    state: directory
+    owner: "{{ immich_uid }}"
+    group: "{{ immich_gid }}"
+    mode: "0750"
+
+- name: Create Immich configuration directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: 0
+    group: 0
+    mode: "0755"
+  loop:
+    - "{{ immich_root }}"
+    - "{{ immich_root }}/systemd"
+
+- name: Render SMB credentials
+  ansible.builtin.template:
+    src: smb-credentials.j2
+    dest: "{{ immich_root }}/.smb-credentials"
+    owner: 0
+    group: 0
+    mode: "0600"
+  register: immich_smb_credentials_file
+  no_log: true
+
+- name: Render Immich systemd units
+  ansible.builtin.template:
+    src: "systemd/{{ item }}.j2"
+    dest: "{{ immich_root }}/systemd/{{ item }}"
+    owner: 0
+    group: 0
+    mode: "0644"
+  loop:
+    - immich.service
+    - "{{ immich_media_mount_unit }}"
+  register: immich_systemd_unit_files
+  notify: Restart immich service
+
+- name: Copy Immich service templates
+  ansible.builtin.import_tasks: copy-templates.yml
+  vars:
+    directory: ../templates
+    target: "{{ immich_root }}"
+    should_notify: Restart immich service
+    files:
+      .env.j2:
+        mode: "0600"
+        owner: 0
+        group: 0
+      docker-compose.yaml.j2:
+        mode: "0600"
+        owner: 0
+        group: 0
+      immich-config.json.j2:
+        mode: "0600"
+        owner: 0
+        group: 0
+      backup.j2:
+        mode: "0750"
+        owner: 0
+        group: 0
+      restore.j2:
+        mode: "0750"
+        owner: 0
+        group: 0
+      smb-credentials.j2:
+        mode: "0600"
+        owner: 0
+        group: 0
+        rename: .smb-credentials
+      systemd/*.j2:
+        mode: "0644"
+        owner: 0
+        group: 0
+
+- name: Install Immich systemd units
+  ansible.builtin.import_tasks: systemd-install-units.yml
+  vars:
+    directory: "{{ immich_root }}/systemd"
+    local_units: roles/immich/templates/systemd
+    should_notify: Restart immich service
+
+- name: Stop Immich before remounting changed SMB configuration
+  when:
+    - immich_smb_credentials_file is changed or immich_systemd_unit_files is changed
+  ansible.builtin.systemd:
+    name: immich.service
+    state: stopped
+  failed_when: false
+
+- name: Mount Immich media share
+  ansible.builtin.systemd:
+    name: "{{ immich_media_mount_unit }}"
+    state: >-
+      {{
+        'restarted'
+        if immich_smb_credentials_file is changed or immich_systemd_unit_files is changed
+        else 'started'
+      }}
+    enabled: true
+    daemon_reload: true
+
+- name: Create Immich media directories
+  ansible.builtin.file:
+    path: "{{ immich_media_mount_path }}/{{ item }}"
+    state: directory
+    owner: "{{ immich_uid }}"
+    group: "{{ immich_gid }}"
+    mode: "0770"
+  loop:
+    - backups
+    - encoded-video
+    - library
+    - profile
+    - thumbs
+    - upload
+
+- name: Create Immich media integrity markers
+  ansible.builtin.file:
+    path: "{{ immich_media_mount_path }}/{{ item }}/.immich"
+    state: touch
+    owner: "{{ immich_uid }}"
+    group: "{{ immich_gid }}"
+    mode: "0660"
+    modification_time: preserve
+    access_time: preserve
+  loop:
+    - backups
+    - encoded-video
+    - library
+    - profile
+    - thumbs
+    - upload
+
+- name: Update Immich Docker Compose images
+  ansible.builtin.import_tasks: docker-compose-update.yml
+  vars:
+    directory: "{{ immich_root }}"
+    pull: true
+    build: false
+    should_notify: Restart immich service
+
+- name: Symlink Immich backup configuration
+  ansible.builtin.file:
+    state: link
+    src: "{{ immich_root }}/backup.yaml"
+    path: "/etc/borgmatic.d/{{ ansible_role_name }}.yaml"
+    force: true
+
+- name: Restore Immich database from backup if requested
+  when: restore is defined
+  ansible.builtin.import_tasks: restore.yml
+  vars:
+    restore_target_dir: "{{ immich_root }}"
+
+- name: Start Immich service
+  ansible.builtin.systemd:
+    name: immich.service
+    state: started
+    enabled: true
+    daemon_reload: true
+  register: immich_started
+
+- name: Register Immich domain on router
+  ansible.builtin.import_tasks:
+    file: router-update-dns.yml
+  vars:
+    machine_ip: "{{ ansible_facts.default_ipv4.address }}"
+    service_url: "{{ immich_domain }}"
+
+- name: Set up Immich observability
+  ansible.builtin.import_tasks:
+    file: setup-observability.yml
+  vars:
+    directory: "{{ immich_root }}"

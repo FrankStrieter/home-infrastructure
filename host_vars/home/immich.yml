@@ -1,0 +1,10 @@
+immich_domain: "fotos.{{ domain }}"
+immich_database_storage_type: SSD
+
+immich_database_password: "{{ vault_immich_database_password }}"
+
+immich_smb_username: "{{ vault_immich_smb_username }}"
+immich_smb_password: "{{ vault_immich_smb_password }}"
+
+immich_smtp_user: frank.strieter@gmail.com
+immich_smtp_password: "{{ vault_immich_smtp_password }}"

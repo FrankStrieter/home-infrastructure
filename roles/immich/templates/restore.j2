@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# vim: set ft=jinja-shell ts=2 sw=2 et:
+
+set -euo pipefail
+
+cd -- {{ immich_root | ansible.builtin.quote }}
+
+docker compose up --wait db
+
+docker compose exec \
+               --no-TTY \
+               db \
+               psql \
+               --no-psqlrc \
+               --dbname=postgres \
+  < {{ immich_root | ansible.builtin.quote }}/backups/db.sql

@@ -1,6 +1,6 @@
 immich_root: "/data/{{ ansible_role_name }}"
-immich_media_mount_path: /mnt/immich
-immich_media_mount_unit: mnt-immich.mount
+immich_media_mount_path: "{{ immich_root }}/app"
+immich_media_mount_unit: data-immich-app.mount
 immich_smb_share: //datengrab.strieter.dev/immich
 immich_uid: 0
 immich_gid: 0

@@ -49,4 +49,5 @@ http:
           thrustCloudFlare: true
           thrustEdgeOne: false
           logLevel: debug
-          denyUntrusted: true
+          trustedIPs:
+            - "192.172.100.0/24"

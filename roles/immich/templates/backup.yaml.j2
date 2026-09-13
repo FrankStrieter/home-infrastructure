@@ -1,21 +1,52 @@
 <<: !include /etc/borgmatic/config.yaml
 
+# Constants to use in the configuration file. Within option values, all
+# occurrences of the constant name in curly braces will be replaced with the
+# constant value. For example, if you have a constant named "app_name" with the
+# value "myapp", then the string "{app_name}" will be replaced with "myapp" in
+# the configuration file.
 constants:
   name: {{ ansible_role_name }}
   unit: immich.service
 
+# List of source directories and files to back up. Globs and tildes
+# are expanded. Do not backslash spaces in path names.
 source_directories: !retain
   - {{ immich_root }}/backups
+  - {{ immich_root }}/app
+  - {{ immich_root }}/redis
 
-numeric_ids: true
-birthtime: true
+# Any paths matching these patterns are excluded from backups. Globs and tildes
+# are expanded. Note that a glob pattern must either start with a glob or be an
+# absolute path. Do not backslash spaces in path names. See the output of "borg
+# help patterns" for more details.
+exclude_patterns:
+  - {{ immich_root }}/app/encoded-video
+  - {{ immich_root }}/app/thumbs
+  - {{ immich_root }}/app/upload
+  - {{ immich_root }}/app/library/amay
+  - {{ immich_root }}/app/library/jbecker
+  - {{ immich_root }}/app/library/kfochtmann
 
+# List of one or more command hooks to execute, triggered at particular points
+# during borgmatic's execution. For each command hook, specify one of "before"
+# or "after", not both.
 commands:
   - before: configuration
+    # Only trigger the hook when borgmatic is run with particular actions listed
+    # here. Defaults to running for all actions.
     when:
       - create
     run:
-      - {{ immich_root }}/backup
+      - {{ immich_root }}/backup start
+
+  - after: configuration
+    # Only trigger the hook when borgmatic is run with particular actions listed
+    # here. Defaults to running for all actions.
+    when:
+      - create
+    run:
+      - {{ immich_root }}/backup stop
 
   - before: action
     when:
@@ -33,4 +64,3 @@ commands:
       - finish
     run:
       - {{ immich_root }}/restore
-      - systemctl start {unit}

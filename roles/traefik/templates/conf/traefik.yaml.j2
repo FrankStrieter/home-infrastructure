@@ -61,6 +61,11 @@ entryPoints:
 
   https:
     address: ":443"
+    transport:
+      respondingTimeouts:
+        readTimeout: 600s
+        idleTimeout: 600s
+        writeTimeout: 600s
     http:
       tls:
         certResolver: letsencrypt

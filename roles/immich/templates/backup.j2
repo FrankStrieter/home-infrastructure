@@ -5,16 +5,53 @@ set -euo pipefail
 
 cd -- {{ immich_root | ansible.builtin.quote }}
 
+immich_admin=(docker compose exec server immich-admin)
 target={{ immich_root | ansible.builtin.quote }}/backups
 
-mkdir --parents -- "$target"
-find "$target" -mindepth 1 -maxdepth 1 -delete
+cleanup() {
+  printf 'Cleaning up backup directory.\n'
 
-docker compose exec \
-               --no-TTY \
-               db \
-               pg_dumpall \
-               --clean \
-               --if-exists \
-               --quote-all-identifiers \
-  > "$target/db.sql"
+  mkdir --parents -- "$target"
+  rm -rf -- "${target:?}"/{*,.*}
+}
+
+db() {
+  docker compose \
+         exec \
+         db \
+         pg_dumpall \
+         --clean \
+         --if-exists \
+         --quote-all-identifiers \
+    > "$target/db.sql"
+}
+
+clean-uploads() {
+  printf 'Removing empty upload directories.\n'
+
+  find {{ immich_root | ansible.builtin.quote }}/app/upload \
+       -type d \
+       -empty \
+       -delete
+}
+
+trap cleanup ERR SIGINT SIGTERM
+
+case "${1-}" in
+  start)
+    "${immich_admin[@]}" enable-maintenance-mode
+
+    cleanup
+    db
+    clean-uploads
+    ;;
+
+  stop)
+    "${immich_admin[@]}" disable-maintenance-mode
+    ;;
+
+  *)
+    printf 'Either the "start" or "stop" action is supported.\n'
+    exit 1
+    ;;
+esac

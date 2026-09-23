@@ -1,3 +1,8 @@
+- name: Ensure sudo is installed
+  ansible.builtin.package:
+    name: sudo
+    state: present
+
 - name: Add Hostname of generated lxc to router
   block:
     - name: Increment the retry count

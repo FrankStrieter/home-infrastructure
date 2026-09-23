@@ -1,6 +1,6 @@
 ---
 - name: Deploy services on Proxmox hypervisors
-  hosts: proxmox
+  hosts: hypervisors
   become: true
   roles:
     - role: lae.proxmox

@@ -1,0 +1,123 @@
+- name: Validate required Home Assistant configuration
+  ansible.builtin.assert:
+    that:
+      - home_assistant_domain | default('', true) | length > 0
+    fail_msg: Set home_assistant_domain in host_vars/home-assistant/homeassistant.yml before deployment.
+
+- name: Set up Home Assistant Cloudflare tunnel
+  delegate_to: localhost
+  become: false
+  community.general.terraform:
+    project_path: roles/home_assistant/cloudflare-tunnel
+    state: present
+    force_init: true
+    variables:
+      cloudflare_account_id: "{{ cloudflare_account_id }}"
+      cloudflare_token: "{{ cloudflare_token }}"
+      cloudflare_zone_id: "{{ cloudflare_zone_id }}"
+      domain: "{{ home_assistant_domain }}"
+    backend_config:
+      access_key: "{{ cloudflare_r2_access_key }}"
+      secret_key: "{{ cloudflare_r2_access_secret }}"
+      key: "{{ ansible_role_name }}/terraform.tfstate"
+  register: home_assistant_terraform
+  no_log: true
+
+- name: Install required packages
+  ansible.builtin.apt:
+    name:
+      - git
+      - rsync
+      - unzip
+      - sudo
+    state: present
+    update_cache: true
+
+- name: Create Home Assistant configuration directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: 0
+    group: 0
+    mode: "0755"
+  loop:
+    - "{{ home_assistant_root }}"
+    - "{{ home_assistant_root }}/config"
+    - "{{ home_assistant_root }}/config/custom_components"
+    - "{{ home_assistant_root }}/config/custom_components/hacs"
+    - "{{ home_assistant_root }}/sources"
+    - "{{ home_assistant_root }}/mosquitto/config"
+    - "{{ home_assistant_root }}/mosquitto/data"
+    - "{{ home_assistant_root }}/backups"
+
+- name: Install HACS custom component
+  ansible.builtin.unarchive:
+    src: "https://github.com/hacs/integration/releases/download/{{ home_assistant_hacs_version }}/hacs.zip"
+    dest: "{{ home_assistant_root }}/config/custom_components/hacs"
+    remote_src: true
+    creates: "{{ home_assistant_root }}/config/custom_components/hacs/__init__.py"
+  notify: Restart home_assistant service
+
+- name: Copy Home Assistant service templates
+  ansible.builtin.import_tasks: copy-templates.yml
+  vars:
+    directory: ../templates
+    target: "{{ home_assistant_root }}"
+    should_notify: Restart home_assistant service
+    files:
+      backup.j2:
+        mode: "0750"
+      restore.j2:
+        mode: "0750"
+
+- name: Update Home Assistant Docker Compose images
+  ansible.builtin.import_tasks: docker-compose-update.yml
+  vars:
+    directory: "{{ home_assistant_root }}"
+    pull: true
+    build: false
+    should_notify: Restart home_assistant service
+
+- name: Install Home Assistant systemd unit
+  ansible.builtin.import_tasks: systemd-install-units.yml
+  vars:
+    directory: "{{ home_assistant_root }}/systemd"
+    local_units: roles/home_assistant/templates/systemd
+    should_notify: Restart home_assistant service
+
+- name: Symlink Home Assistant backup configuration
+  ansible.builtin.file:
+    state: link
+    src: "{{ home_assistant_root }}/backup.yaml"
+    path: "/etc/borgmatic.d/{{ ansible_role_name }}.yaml"
+    force: true
+
+- name: Restore Home Assistant from backup if requested
+  when: restore is defined
+  ansible.builtin.import_tasks: restore.yml
+  vars:
+    restore_target_dir: "{{ home_assistant_root }}"
+
+- name: Start Home Assistant service
+  ansible.builtin.systemd:
+    name: home_assistant.service
+    state: started
+    enabled: true
+    daemon_reload: true
+  register: home_assistant_started
+
+- name: Register Home Assistant domain on router
+  ansible.builtin.include_tasks:
+    file: router-update-dns.yml
+  vars:
+    machine_ip: "{{ ansible_facts.default_ipv4.address }}"
+    service_url: "{{ item }}"
+  loop:
+    - "{{ home_assistant_domain }}"
+    - "{{ home_assistant_mqtt_domain }}"
+
+- name: Set up Home Assistant observability
+  ansible.builtin.import_tasks:
+    file: setup-observability.yml
+  vars:
+    directory: "{{ home_assistant_root }}"

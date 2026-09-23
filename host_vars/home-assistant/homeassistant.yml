@@ -1,0 +1,4 @@
+home_assistant_domain: "home-assistant.{{ domain }}"
+home_assistant_mqtt_domain: "broker.{{ domain }}"
+home_assistant_tunnel_domain: ha-tunnel.{{ domain }}
+traefik_publish_mqtt: true

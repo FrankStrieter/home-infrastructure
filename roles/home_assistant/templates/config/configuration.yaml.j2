@@ -1,0 +1,19 @@
+default_config:
+
+homeassistant:
+  internal_url: "http://{{ ansible_facts.default_ipv4.address }}:{{ home_assistant_port }}"
+  external_url: "https://{{ home_assistant_domain | ansible.builtin.mandatory }}"
+
+http:
+  use_x_forwarded_for: true
+  trusted_proxies:
+{% for proxy in home_assistant_trusted_proxies %}
+    - {{ proxy }}
+{% endfor %}
+
+# packeges coming from 
+packages: !include_dir_named packages
+
+# Shelly is a core integration. It discovers devices automatically on the LAN.
+# HACS and HA-MCP are pre-installed as custom components; their config flows
+# must be completed once in the Home Assistant UI after the first startup.

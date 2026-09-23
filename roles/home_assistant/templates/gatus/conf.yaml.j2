@@ -1,0 +1,7 @@
+endpoints:
+  - name: Home Assistant
+    group: Home automation
+    url: "https://{{ home_assistant_domain }}"
+    interval: 1m
+    conditions:
+      - "[STATUS] == 200"

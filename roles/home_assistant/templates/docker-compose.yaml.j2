@@ -1,0 +1,50 @@
+services:
+  home-assistant:
+    image: {{ home_assistant_image }}
+    restart: unless-stopped
+    volumes:
+      - ./config:/config
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      TZ: Europe/Berlin
+    networks:
+      - web
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.home-assistant.entrypoints=https
+      - traefik.http.routers.home-assistant.rule=Host(`{{ home_assistant_domain | mandatory }}`)
+      - traefik.http.services.home-assistant.loadbalancer.server.port=8123
+      - traefik.http.routers.home-assistant.middlewares=security-headers@file,traefik-real-ip@file
+
+  mqtt:
+    image: {{ home_assistant_mosquitto_image }}
+    restart: unless-stopped
+    volumes:
+      - ./mosquitto/config:/mosquitto/config
+      - ./mosquitto/data:/mosquitto/data
+    networks:
+      - web
+    labels:
+      traefik.enable: "true"
+      traefik.tcp.routers.home-assistant-mqtt.entrypoints: mqtt
+      traefik.tcp.routers.home-assistant-mqtt.rule: "HostSNI(`*`)"
+      traefik.tcp.routers.home-assistant-mqtt.service: home-assistant-mqtt
+      traefik.tcp.services.home-assistant-mqtt.loadbalancer.server.port: "1883"
+
+  tunnel:
+    image: {{ home_assistant_cloudflared_image }}
+    command: -metrics 0.0.0.0:20241 tunnel run
+    restart: unless-stopped
+    environment:
+      TUNNEL_TOKEN: "{{ home_assistant_terraform.outputs.tunnel_token.value.token }}"
+    networks:
+      - web
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}-tunnel.rule=Host(`{{ home_assistant_tunnel_domain | mandatory }}`) && PathPrefix(`/metrics`)
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}-tunnel.entrypoints=https
+      - traefik.http.services.${COMPOSE_PROJECT_NAME}-tunnel.loadbalancer.server.port=20241
+
+networks:
+  web:
+    external: true

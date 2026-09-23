@@ -1,0 +1,15 @@
+[Unit]
+Description=Home Assistant
+BindsTo=docker.service
+After=docker.service
+OnFailure=unit-status-mail@%n.service
+
+[Service]
+WorkingDirectory={{ home_assistant_root }}
+ExecStartPre=/usr/bin/docker compose config
+ExecStart=/usr/bin/docker compose up
+ExecStop=/usr/bin/docker compose stop
+ExecReload=/usr/bin/docker compose up --detach
+
+[Install]
+WantedBy=multi-user.target

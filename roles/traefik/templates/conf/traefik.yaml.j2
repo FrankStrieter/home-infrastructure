@@ -66,6 +66,8 @@ entryPoints:
         readTimeout: 600s
         idleTimeout: 600s
         writeTimeout: 600s
+    forwardedHeaders:
+      insecure: true
     http:
       tls:
         certResolver: letsencrypt

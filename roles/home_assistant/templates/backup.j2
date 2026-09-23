@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+service=home_assistant.service
+was_running=false
+
+if systemctl is-active --quiet "$service"; then
+  was_running=true
+  systemctl stop "$service"
+fi
+
+cleanup() {
+  if [[ "$was_running" == true ]]; then
+    systemctl start "$service"
+  fi
+}
+trap cleanup EXIT
+
+rm -rf -- {{ home_assistant_root | ansible.builtin.quote }}/backups/config
+mkdir --parents -- {{ home_assistant_root | ansible.builtin.quote }}/backups/config
+rsync --archive --delete \
+  {{ home_assistant_root | ansible.builtin.quote }}/config/ \
+  {{ home_assistant_root | ansible.builtin.quote }}/backups/config/
+rm -rf -- {{ home_assistant_root | ansible.builtin.quote }}/backups/mosquitto
+mkdir --parents -- {{ home_assistant_root | ansible.builtin.quote }}/backups/mosquitto
+rsync --archive --delete \
+  {{ home_assistant_root | ansible.builtin.quote }}/mosquitto/ \
+  {{ home_assistant_root | ansible.builtin.quote }}/backups/mosquitto/

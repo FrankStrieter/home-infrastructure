@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+systemctl stop home_assistant.service
+rsync --archive --delete \
+  {{ home_assistant_root | ansible.builtin.quote }}/backups/config/ \
+  {{ home_assistant_root | ansible.builtin.quote }}/config/
+rsync --archive --delete \
+  {{ home_assistant_root | ansible.builtin.quote }}/backups/mosquitto/ \
+  {{ home_assistant_root | ansible.builtin.quote }}/mosquitto/
+systemctl start home_assistant.service

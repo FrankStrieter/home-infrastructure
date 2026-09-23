@@ -1,0 +1,10 @@
+home_assistant_root: "/data/{{ ansible_role_name }}"
+home_assistant_image: "ghcr.io/home-assistant/home-assistant:2026.9.2"
+home_assistant_cloudflared_image: "cloudflare/cloudflared:2026.9.0"
+home_assistant_mosquitto_image: "eclipse-mosquitto:2.0.22"
+home_assistant_hacs_version: "2.0.5"
+home_assistant_mcp_repository: "https://github.com/homeassistant-ai/ha-mcp-integration.git"
+home_assistant_mcp_version: "v2.2.0"
+home_assistant_port: 8123
+home_assistant_trusted_proxies:
+  - 172.18.0.0/16

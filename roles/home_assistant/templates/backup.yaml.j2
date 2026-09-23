@@ -1,0 +1,22 @@
+<<: !include /etc/borgmatic/config.yaml
+
+constants:
+  name: {{ ansible_role_name }}
+
+source_directories:
+  - {{ home_assistant_root }}/backups
+
+numeric_ids: true
+birthtime: true
+
+commands:
+  - before: configuration
+    when:
+      - create
+    run:
+      - {{ home_assistant_root }}/backup
+  - after: configuration
+    when:
+      - restore
+    run:
+      - {{ home_assistant_root }}/restore

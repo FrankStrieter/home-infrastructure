@@ -1,6 +1,10 @@
 traefik_root: /data/traefik
 
 traefik_dynamic_file_configuration: "{{ traefik_root }}/conf/conf.d/"
+traefik_publish_mqtt: false
+traefik_mqtt_bind_address: "{{ ansible_facts.default_ipv4.address }}"
+traefik_users:
+  dashboard: {}
 
 # renovate: docker=traefik
 traefik_image_version: v3.7.13

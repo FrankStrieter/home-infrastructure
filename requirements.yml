@@ -23,4 +23,4 @@ collections:
     version: '10.6.0'
   - name: hifis.toolkit
   - name: community.openwrt
-    version: 1.6.0
+    version: 1.8.0

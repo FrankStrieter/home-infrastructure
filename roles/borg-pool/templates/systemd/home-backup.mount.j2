@@ -1,0 +1,13 @@
+[Unit]
+Description=Borg Mount
+Wants=network-online.target
+After=network-online.target
+
+[Mount]
+What=/dev/disk/by-uuid/43d4013d-2bb3-49ce-9b6c-726727a9c107
+Where=/home/backup
+Type=xfs
+TimeoutSec=60
+
+[Install]
+WantedBy=multi-user.target

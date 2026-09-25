@@ -1,0 +1,19 @@
+system_users:
+  backup:
+    name: Backup
+    shell: /bin/bash
+    groups:
+      - "{{ passwordless_sudo_group }}"
+      - sudo
+      - adm
+  backup.cloud:
+    name: Backup
+    shell: /bin/bash
+    groups:
+      - backup
+    password: "{{ vault_system_users_backup_cloud_password }}"
+    forcePasswordChange: false
+    permissions:
+      - path: /home/backup
+        recursive: true
+        mode: g+r

@@ -1,0 +1,77 @@
+---
+- name: Install Samba server
+  ansible.builtin.include_role:
+    name: geerlingguy.samba
+  when: ansible_facts['os_family'] != 'Debian'
+
+- name: Install Samba server on Debian
+  ansible.builtin.package:
+    name: samba
+    state: present
+  when: ansible_facts['os_family'] == 'Debian'
+
+- name: Grant the Samba user group access to the share path
+  ansible.builtin.file:
+    path: "{{ samba_share_path }}"
+    mode: "g+rwX"
+    recurse: true
+    state: directory
+
+- name: Configure Samba
+  ansible.builtin.template:
+    src: smb.conf.j2
+    dest: "{{ samba_config_path }}"
+    owner: root
+    group: root
+    mode: "0644"
+  notify:
+    - Restart Samba
+    - Restart NetBIOS name service
+
+- name: Validate Samba configuration
+  ansible.builtin.command:
+    argv:
+      - testparm
+      - --suppress-prompt
+      - "{{ samba_config_path }}"
+  changed_when: false
+
+- name: Check whether the share user is in Samba's password database
+  ansible.builtin.command:
+    argv:
+      - pdbedit
+      - -L
+      - -u
+      - "{{ samba_share_user }}"
+  register: samba_share_user_in_password_database
+  changed_when: false
+  failed_when: false
+
+- name: Add the share user to Samba's password database
+  ansible.builtin.command:
+    argv:
+      - smbpasswd
+      - -a
+      - -s
+      - "{{ samba_share_user }}"
+    stdin: "{{ samba_share_password }}\n{{ samba_share_password }}"
+  when: samba_share_user_in_password_database.rc != 0
+  changed_when: true
+  no_log: true
+
+- name: Update the share user's Samba password
+  ansible.builtin.command:
+    argv:
+      - smbpasswd
+      - -s
+      - "{{ samba_share_user }}"
+    stdin: "{{ samba_share_password }}\n{{ samba_share_password }}"
+  when: samba_share_user_in_password_database.rc == 0
+  changed_when: false
+  no_log: true
+
+- name: Enable and start Samba
+  ansible.builtin.systemd:
+    name: "{{ samba_service_name }}"
+    enabled: true
+    state: started

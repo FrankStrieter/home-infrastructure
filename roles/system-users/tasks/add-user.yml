@@ -46,6 +46,7 @@
   register: users_added
 
 - name: Force password change if a password was set during user creation
+  when: user.value.forcePasswordChange | default(true) and user.value.password is defined
   ansible.builtin.command:
     argv:
       - passwd
@@ -62,6 +63,23 @@
   loop_control:
     loop_var: user
     label: "{{ user.name }}"
+
+- name: Apply user path permissions
+  ansible.builtin.include_tasks:
+    file: set-permissions.yml
+  loop: >-
+    {{
+      system_users_to_add |
+      ansible.builtin.dict2items |
+      ansible.builtin.subelements('value.permissions', skip_missing = true) |
+      map('ansible.builtin.combine') |
+      list
+    }}
+  loop_control:
+    loop_var: system_users_permission
+    label: >-
+      {{ system_users_permission.key }}
+      path={{ system_users_permission.path }}
 
 - name: Add SSH authorized keys
   ansible.posix.authorized_key:

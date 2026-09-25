@@ -3,6 +3,30 @@
     name: borgbackup
     state: present
 
+- name: Copy Borg-Pool service templates
+  ansible.builtin.import_tasks: copy-templates.yml
+  vars:
+    directory: ../templates
+    target: "{{ borg_pool_root }}"
+    files:
+      systemd/*.j2:
+        mode: "0644"
+        owner: 0
+        group: 0
+
+- name: Install Borg-Pool systemd units
+  ansible.builtin.import_tasks: systemd-install-units.yml
+  vars:
+    directory: "{{ borg_pool_root }}/systemd"
+    local_units: roles/borg-pool/templates/systemd
+
+- name: Mount Borg-Pool drive
+  ansible.builtin.systemd:
+    name: "home-backup.mount"
+    state: started
+    enabled: true
+    daemon_reload: true
+
 - name: Ensure SSH directory exists
   ansible.builtin.file:
     path: "{{ borg_pool_home }}/.ssh"

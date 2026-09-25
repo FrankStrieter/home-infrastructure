@@ -1,4 +1,5 @@
 borg_pool_user: "{{ borgmatic_user }}"
 borg_pool_group: "{{ borgmatic_user }}"
 borg_pool_home: "/home/{{ borgmatic_user }}"
-borg_pool_pool: "{{ home }}/repos"
+borg_pool_pool: "{{ borg_pool_home }}/repos"
+borg_pool_root: "/data/borg-pool"

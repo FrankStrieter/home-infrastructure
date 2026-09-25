@@ -98,6 +98,10 @@
       tags:
         - borg-pool
         - storage
+    - role: samba
+      tags:
+        - samba
+        - files
 
 - name: Deploy build server
   hosts: bob

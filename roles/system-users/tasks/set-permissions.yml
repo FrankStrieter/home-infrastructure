@@ -1,0 +1,30 @@
+---
+- name: Check user permission path
+  ansible.builtin.stat:
+    path: "{{ system_users_permission.path }}"
+  register: system_users_permission_path
+
+- name: Validate user permission path
+  ansible.builtin.assert:
+    that:
+      - system_users_permission_path.stat.exists
+      - >-
+        not (system_users_permission.recursive | default(false) | bool) or
+        system_users_permission_path.stat.isdir
+    fail_msg: >-
+      Permission path '{{ system_users_permission.path }}' for user
+      '{{ system_users_permission.key }}' must exist{% if
+      system_users_permission.recursive | default(false) | bool %} and be a
+      directory when recursive is true{% endif %}.
+
+- name: Set user path permissions
+  ansible.builtin.file:
+    path: "{{ system_users_permission.path }}"
+    mode: "{{ system_users_permission.mode | ansible.builtin.mandatory }}"
+    recurse: "{{ system_users_permission.recursive | default(false) | bool }}"
+    state: >-
+      {{
+        'directory'
+        if system_users_permission.recursive | default(false) | bool
+        else 'file'
+      }}

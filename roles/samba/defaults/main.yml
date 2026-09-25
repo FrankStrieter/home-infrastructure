@@ -1,0 +1,4 @@
+---
+samba_config_path: /etc/samba/smb.conf
+samba_service_name: "{{ 'smbd' if ansible_facts['os_family'] == 'Debian' else 'smb' }}"
+samba_netbios_service_name: "{{ 'nmbd' if ansible_facts['os_family'] == 'Debian' else 'nmb' }}"

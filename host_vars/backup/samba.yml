@@ -1,0 +1,6 @@
+---
+samba_share_name: backup
+samba_share_path: /home/backup
+samba_share_user: backup.cloud
+samba_share_password: >-
+  {{ system_users[samba_share_user].password | ansible.builtin.mandatory }}

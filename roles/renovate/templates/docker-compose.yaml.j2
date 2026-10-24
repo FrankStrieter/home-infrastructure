@@ -49,6 +49,9 @@ services:
       MEND_RNV_GITHUB_APP_KEY: |
         {{ renovate_github_app_key | indent(8) }}
 
+      # Allow Renovate to use the GitHub App token for GitHub Packages lookups.
+      RENOVATE_X_GITHUB_HOST_RULES: "true"
+
       MEND_RNV_WEBHOOK_SECRET: {{ renovate_webhook_secret }}
 
       MEND_RNV_WORKER_CLEANUP: 0 0 * * *

@@ -25,6 +25,15 @@
   ],
   "packageRules": [
     {
+      "description": "Use GitHub Container Registry for Immich images",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": [
+        "ghcr.io/immich-app/immich-machine-learning",
+        "ghcr.io/immich-app/immich-server"
+      ],
+      "registryUrls": ["https://ghcr.io"]
+    },
+    {
       "description": "Non-SemVer image: https://github.com/healthchecks/healthchecks/issues/1276",
       "matchPackageNames": ["healthchecks/healthchecks"],
       "versioning": "loose"

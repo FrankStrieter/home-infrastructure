@@ -28,7 +28,7 @@ services:
       - traefik.http.services.${COMPOSE_PROJECT_NAME}-app.loadbalancer.server.port=2283
 
   machine-learning:
-    image: ghcr.io/immich-app/immich-machine-learning:v3.2.0
+    image: ghcr.io/immich-app/immich-machine-learning:v3.4.1
     restart: unless-stopped
     volumes:
       - ./cache/ml-model:/cache

@@ -16,7 +16,7 @@ collections:
   - name: community.general
     version: 14.0.1
   - name: community.docker
-    version: 5.4.0
+    version: 5.4.1
   - name: community.proxmox
     version: 2.1.0
   - name: devsec.hardening
